@@ -25,7 +25,7 @@ const ICONES: Record<EntreeNavigation["icone"], LucideIcon> = {
   admin: Settings,
 };
 
-export function Sidebar() {
+export function Sidebar({ estGerant }: { estGerant: boolean }) {
   const pathname = usePathname();
   const active = entreeActive(pathname);
   const commun = NAVIGATION.filter((e) => !e.gerantsSeulement);
@@ -47,16 +47,18 @@ export function Sidebar() {
             <ItemNavigation key={e.href} entree={e} actif={active?.href === e.href} />
           ))}
         </ul>
-        <div>
-          <p className="px-3 pb-2 text-[11px] font-semibold tracking-[0.12em] text-sidebar-foreground/70 uppercase">
-            Gérants
-          </p>
-          <ul className="flex flex-col gap-1">
-            {gerants.map((e) => (
-              <ItemNavigation key={e.href} entree={e} actif={active?.href === e.href} />
-            ))}
-          </ul>
-        </div>
+        {estGerant && (
+          <div>
+            <p className="px-3 pb-2 text-[11px] font-semibold tracking-[0.12em] text-sidebar-foreground/70 uppercase">
+              Gérants
+            </p>
+            <ul className="flex flex-col gap-1">
+              {gerants.map((e) => (
+                <ItemNavigation key={e.href} entree={e} actif={active?.href === e.href} />
+              ))}
+            </ul>
+          </div>
+        )}
       </nav>
     </aside>
   );

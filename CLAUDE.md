@@ -29,6 +29,13 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Polices servies depuis src/app/fonts (next/font/local), jamais Google Fonts.
 - Code d'accès de la démo vérifié dans src/proxy.ts (src/lib/demo-access.ts).
 
+## Choix techniques (session 1.2)
+- Session lue par src/server/session.ts (lireSession), gardes dans src/server/garde.ts (exigerProfil, exigerGerant, exigerModeDemo).
+- Clé secrète uniquement via clientAdmin() (src/lib/supabase/server.ts), jamais dans un composant client.
+- Horloge de démo = décalage en secondes (parametre.horloge_demo), même règle en SQL (app_now) et en TypeScript (DemoClock).
+- Jointures PostgREST depuis profil : préciser la relation (`profil_magasin!profil_magasin_profil_id_fkey(...)`), car created_by crée une seconde clé étrangère vers profil.
+- Tests pgTAP : se faire passer pour un utilisateur avec `set local role authenticated` et `set local request.jwt.claims`.
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.

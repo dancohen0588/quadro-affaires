@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 3100;
+export const PORT_PRODUCTION = 3200;
 export const E2E_ACCESS_CODE = "code-e2e";
 
 export default defineConfig({
@@ -28,11 +29,21 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    // L'application doit être construite avant (pnpm build) : on teste le rendu de production.
-    command: `pnpm start --port ${PORT}`,
-    url: `http://localhost:${PORT}/acces`,
-    reuseExistingServer: !process.env.CI,
-    env: { APP_MODE: "demo", DEMO_ACCESS_CODE: E2E_ACCESS_CODE },
-  },
+  // L'application doit être construite avant (pnpm build) : on teste le rendu de production.
+  // La base Supabase (locale en CI) doit être remplie par pnpm seed:demo avec le même DEMO_PERSONA_PASSWORD.
+  webServer: [
+    {
+      command: `pnpm start --port ${PORT}`,
+      url: `http://localhost:${PORT}/acces`,
+      reuseExistingServer: !process.env.CI,
+      env: { ...process.env, APP_MODE: "demo", DEMO_ACCESS_CODE: E2E_ACCESS_CODE } as Record<string, string>,
+    },
+    {
+      // Même build en APP_MODE=production : vérifie que les pages propres à la démo sont introuvables.
+      command: `pnpm start --port ${PORT_PRODUCTION}`,
+      url: `http://localhost:${PORT_PRODUCTION}/acces`,
+      reuseExistingServer: !process.env.CI,
+      env: { ...process.env, APP_MODE: "production", DEMO_ACCESS_CODE: "" } as Record<string, string>,
+    },
+  ],
 });

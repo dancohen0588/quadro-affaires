@@ -10,12 +10,14 @@ describe("Clock", () => {
     expect(dateParis(new Date("2026-10-25T22:30:00Z"))).toBe("2026-10-25"); // 23 h 30 à Paris (UTC+1, heure d'hiver)
   });
 
-  it("utilise la date simulée en démo, l'heure système sinon", async () => {
-    const simulee = new Date("2026-11-02T06:00:00Z");
-    expect(await new DemoClock(async () => simulee).today()).toBe("2026-11-02");
-    expect(await new DemoClock(async () => simulee).now()).toEqual(simulee);
-    const sansSimulation = await new DemoClock(async () => null).now();
-    expect(Math.abs(sansSimulation.getTime() - Date.now())).toBeLessThan(1000);
+  it("décale l'heure système du réglage de démo, comme app_now()", async () => {
+    const fixe = { now: async () => new Date("2026-10-30T06:00:00Z"), today: async () => "2026-10-30" };
+    const troisJours = new DemoClock(async () => 3 * 86400, fixe);
+    expect(await troisJours.now()).toEqual(new Date("2026-11-02T06:00:00Z"));
+    expect(await troisJours.today()).toBe("2026-11-02");
+    expect(await new DemoClock(async () => 0, fixe).today()).toBe("2026-10-30");
+    const reelle = await new DemoClock(async () => 0).now();
+    expect(Math.abs(reelle.getTime() - Date.now())).toBeLessThan(1000);
     expect(await new SystemClock().today()).toBe(dateParis(new Date()));
   });
 });
