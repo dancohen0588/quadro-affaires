@@ -1,0 +1,38 @@
+# Dépendances et builds
+node_modules/
+.pnpm-store/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Tests
+playwright-report/
+test-results/
+blob-report/
+
+# Environnement : seul .env.example est versionné
+.env
+.env.*
+!.env.example
+
+# Supabase CLI
+supabase/.branches/
+supabase/.temp/
+
+# Vercel
+.vercel/
+
+# Données réelles : jamais dans le dépôt (seules les copies anonymisées le sont)
+docs/sources/*original*
+docs/sources/*.orig.*
+*.reel.*
+
+# Système et éditeurs
+.DS_Store
+*.log
+.idea/
+.vscode/*
+!.vscode/settings.json
