@@ -1,0 +1,140 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Charte Quadro Affaires (CLAUDE.md). Pas de thème sombre : l'outil est conçu pour l'ordinateur, en clair. */
+
+@theme inline {
+  --font-sans: var(--font-texte);
+  --font-heading: var(--font-titre);
+  --font-mono: var(--font-reference);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--teal-700);
+  --color-chart-2: var(--teal-500);
+  --color-chart-3: var(--sage-500);
+  --color-chart-4: var(--phase-03);
+  --color-chart-5: var(--phase-02);
+
+  /* Palette de la charte, utilisable en classes : bg-teal-900, text-phase-04, bg-etat-retard… */
+  --color-teal-900: var(--teal-900);
+  --color-teal-700: var(--teal-700);
+  --color-teal-500: var(--teal-500);
+  --color-sage-500: var(--sage-500);
+  --color-sage-100: var(--sage-100);
+  --color-fond: var(--fond);
+  --color-encre: var(--encre);
+  --color-phase-01: var(--phase-01);
+  --color-phase-02: var(--phase-02);
+  --color-phase-03: var(--phase-03);
+  --color-phase-04: var(--phase-04);
+  --color-phase-05: var(--phase-05);
+  --color-phase-06: var(--phase-06);
+  --color-etat-ok: var(--etat-ok);
+  --color-etat-attention: var(--etat-attention);
+  --color-etat-retard: var(--etat-retard);
+
+  /* Rayons : boutons et champs 8 px, cartes 12 px */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-4xl: 24px;
+}
+
+:root {
+  --teal-900: #0e3b45;
+  --teal-700: #1b5a66;
+  --teal-500: #2f7a86;
+  --sage-500: #9dbfae;
+  --sage-100: #e8f0ec;
+  --fond: #f4f7f6;
+  --encre: #15262b;
+
+  --phase-01: #3b6e8f;
+  --phase-02: #6b5b95;
+  --phase-03: #b9812e;
+  --phase-04: #3a8073;
+  --phase-05: #b4483f;
+  --phase-06: #5b6472;
+
+  --etat-ok: #2f7d5b;
+  --etat-attention: #b07a1f;
+  --etat-retard: #b4483f;
+
+  --background: var(--fond);
+  --foreground: var(--encre);
+  --card: #ffffff;
+  --card-foreground: var(--encre);
+  --popover: #ffffff;
+  --popover-foreground: var(--encre);
+  --primary: var(--teal-900);
+  --primary-foreground: #ffffff;
+  --secondary: var(--sage-100);
+  --secondary-foreground: var(--teal-900);
+  --muted: var(--sage-100);
+  --muted-foreground: #4f6268;
+  --accent: var(--sage-100);
+  --accent-foreground: var(--teal-900);
+  --destructive: var(--etat-retard);
+  --border: #dbe4e0;
+  --input: #cbd8d2;
+  --ring: var(--teal-500);
+  --radius: 8px;
+
+  --sidebar: var(--teal-900);
+  --sidebar-foreground: #e6efec;
+  --sidebar-primary: var(--sage-500);
+  --sidebar-primary-foreground: var(--teal-900);
+  --sidebar-accent: var(--teal-700);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #24525c;
+  --sidebar-ring: var(--sage-500);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading font-bold tracking-tight;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}

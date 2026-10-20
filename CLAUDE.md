@@ -1,6 +1,7 @@
 # Quadro Affaires
 Outil de suivi d'affaire des 3 showrooms Quadro. Utilisateurs : 3 gérants, 6 conceptrices, 2 transverses.
 Lire docs/conception.md avant toute tâche ; citer les identifiants EF-, RG-, ENF- dans les commits et PR.
+Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` remplace `middleware.ts`) ; consulter node_modules/next/dist/docs/ avant d'utiliser une API Next.
 
 ## Règles
 - Interface en français, vocabulaire de la section 2 : R0-R4, BDC, ARC, BPA, contremarque, CNQ, débit.
@@ -21,6 +22,12 @@ Lire docs/conception.md avant toute tâche ; citer les identifiants EF-, RG-, EN
 - Migrations écrites à la main dans supabase/migrations, une par sujet, puis pnpm db:push et pnpm db:types.
 - La CI rejoue toutes les migrations sur une base éphémère et lance les tests pgTAP : une migration qui ne se rejoue pas depuis zéro est un échec.
 - pnpm seed:demo remet la base distante dans l'état du scénario de démo ; ne jamais le lancer pendant une présentation.
+
+## Choix techniques (session 1.1)
+- Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui (base Base UI), Zod 4, Vitest, Playwright.
+- cacheComponents désactivé : rendu dynamique classique, toutes les pages dépendent de l'utilisateur.
+- Polices servies depuis src/app/fonts (next/font/local), jamais Google Fonts.
+- Code d'accès de la démo vérifié dans src/proxy.ts (src/lib/demo-access.ts).
 
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
