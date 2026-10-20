@@ -9,8 +9,9 @@ import { readSupabasePublicEnv } from "@/lib/env";
  * Les droits sont ceux de l'utilisateur : la RLS s'applique (section 12).
  */
 export async function clientUtilisateur() {
-  const { url, publishableKey } = readSupabasePublicEnv();
+  // Lire les cookies d'abord : la page devient dynamique (jamais pré-rendue au build, où la config peut manquer).
   const cookieStore = await cookies();
+  const { url, publishableKey } = readSupabasePublicEnv();
   return createServerClient(url, publishableKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
