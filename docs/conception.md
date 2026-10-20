@@ -304,6 +304,7 @@ Index de recherche : `nom`, `prenom`, `raison_sociale`, `telephone`, `email` (tr
 | concepteur_id | uuid → profil | conceptrice ou gérant |
 | projet | text | liste `parametre.types_projet` (cuisine, dressing, entrée, bibliothèque, placard, bureau, salle de bain, autre) |
 | libelle | text | calculé : `NOM Prénom · Projet` (ou raison sociale), modifiable |
+| libelle_manuel | boolean | vrai si le libellé a été modifié à la main : il n'est plus recalculé (RG-03) |
 | contremarque | text | préremplie avec `NOM Prénom` ou la raison sociale, modifiable |
 | statut | text | `active`, `gagnee`, `perdue`, `abandonnee`, `cloturee` |
 | motif_perte | text | obligatoire si `perdue` ou `abandonnee` ; liste `parametre.motifs_non_vente` |
@@ -320,6 +321,7 @@ Index de recherche : `nom`, `prenom`, `raison_sociale`, `telephone`, `email` (tr
 | --- | --- | --- |
 | client_id | uuid → client | |
 | date_signature | date | |
+| magasin_id | uuid → magasin | magasin de la vente (ajout v1.2 : droits et indicateurs par magasin) |
 | montant_ht_cts, montant_ttc_cts | integer | montants du BDC |
 | financement | text | `aucun`, `franfinance` |
 | gesteos_devis_ref | text | ex. D20260928#4538 |
@@ -367,6 +369,8 @@ Une vente a au moins une affaire (`affaire.vente_id`), toutes du même client.
 | --- | --- | --- |
 | affaire_id | uuid → affaire | |
 | etape_code | text | code de l'étape dans la définition |
+| phase_code | text | phase de l'étape (`accueil` … `cloture`), copiée de la définition ; sert aux droits des transverses |
+| branche | text | `principale`, `autres_fournisseurs`, `sav` |
 | iteration | integer | 1 par défaut ; 2, 3… pour R3.n et SAV |
 | statut | text | `a_venir`, `en_cours`, `faite`, `sautee`, `bloquee` |
 | issue_code | text | issue choisie à la validation |
@@ -452,8 +456,9 @@ Une vente a au moins une affaire (`affaire.vente_id`), toutes du même client.
 | avant, apres | jsonb | |
 | auteur_id | uuid | |
 | at | timestamptz | |
+| affaire_id, vente_id, client_id | uuid | rattachement de la trace (historique d'une fiche, EF-40, et droits de lecture) ; vides pour une suppression |
 
-Alimenté par trigger générique sur les tables métier. Lecture seule pour tous.
+Alimenté par trigger générique sur les tables métier et le référentiel ; les mises à jour qui ne touchent que des colonnes techniques (`updated_at`, `derniere_activite_at`, `etape_courante_code`) ne sont pas journalisées. Lecture seule : chacun lit l'historique de ce qu'il voit, les gérants tout. Table en ajout seul, sans `updated_at`.
 
 #### `parametre`
 | Champ | Type | Règle |
@@ -482,39 +487,46 @@ Clés initiales :
 
 ### 7.1 Format de la définition
 
-La définition est un JSON validé par un schéma Zod. Structure :
+La définition est un JSON (`process/2026-v1.json`) validé en deux temps : sa forme par le schéma Zod `src/lib/process/schema.ts`, sa cohérence par `src/lib/process/valider.ts` (codes uniques, cibles existantes, sens des types d'issue, étapes atteignables depuis le départ, au moins une issue qui clôture). Structure :
 
 ```ts
-type ProcessDefinition = {
-  nom: string;                      // "2026 v1"
-  phases: Phase[];
-};
-type Phase = { code: string; numero: string; nom: string; couleur: string; etapes: Etape[] };
+type ProcessDefinition = { nom: string; depart: string; phases: Phase[] };   // depart : "R0"
+type Phase = { code: CodePhase; numero: string; nom: string; couleur: string; etapes: Etape[] };
+type CodePhase = "accueil" | "conception" | "vente" | "commande" | "livraison_pose" | "cloture";
 type Etape = {
   code: string;                     // stable, ex. "R1"
   titre: string;
   branche?: "principale" | "autres_fournisseurs" | "sav";
   responsable: Role;                // qui valide l'étape
-  repetable?: boolean;              // R3, SAV
-  bloquee_si?: RegleBlocage[];      // ex. acompte_1_non_recu
+  repetable?: boolean;              // R3, COMMANDE_AGEM, ARC, BPA, SAV
+  bloquee_si?: "acompte_1_non_recu"[];
   taches: TacheModele[];
   documents: DocumentAttendu[];
   issues: Issue[];
 };
 type Role = "concepteur" | "gerant_bpa" | "gerant_logistique" | "gerant_finance" | "responsable_r4";
 type TacheModele = { code: string; titre: string; assignee: Role; echeance: Echeance; optionnelle?: boolean };
-type Echeance =
-  | { depuis: "ouverture_etape" | "rdv" | "date_pose" | "date_livraison"; jours: number; ouvres?: boolean };
-type DocumentAttendu = { code: string; libelle: string; dossier: string; gabarit_nom?: string; formats: string[] };
+type EcheanceSimple =
+  | { depuis: "ouverture_etape" | "date_pose" | "date_livraison" | "fin_chantier"; jours: number; ouvres?: boolean }
+  | { depuis: "rdv"; rdv?: "R0" | "R1" | "R2" | "R3" | "R4"; jours: number; ouvres?: boolean } // par défaut le RDV de l'étape
+  | { depuis: "aucune" };                                                                     // « à réception »
+type Echeance = EcheanceSimple | { premiere_de: [EcheanceSimple, EcheanceSimple] };            // « J+5 ou J-7 avant la pose »
+type DocumentAttendu = { code: string; libelle: string; dossier: string; gabarit_nom?: string; formats: ("jpg" | "heic" | "pdf" | "docx" | "xlsx")[] };
 type Issue = {
   code: string; libelle: string;
-  type: "go" | "loop" | "end" | "alert" | "wait";
-  vers?: string;                    // code de l'étape suivante
+  type: "go" | "loop" | "end" | "alert" | "wait" | "fin_branche";
+  vers?: string;                    // étape suivante
+  ouvre?: { etape: string; optionnel?: boolean; question?: string }[];  // étapes ouvertes en parallèle (7.4)
   motif_obligatoire?: boolean;
   demande_date?: boolean;           // relance convenue, R3.n
+  relance_jours?: number;           // R2 sans réponse : relance à J+7 (RG-34)
+  demande_avis_google?: boolean;    // D12
+  vers_si_avis_obtenu?: string;     // R4 : archivage direct si l'avis est déjà obtenu
   statut_affaire?: "perdue" | "abandonnee" | "gagnee" | "cloturee";
 };
 ```
+
+Règles des types d'issue : `go` indique `vers` ; `loop` reboucle sur sa propre étape, qui doit être répétable ; `end` fixe le statut de l'affaire (motif obligatoire si perdue ou abandonnée, RG-06) ; `wait` demande une date ou une relance ; `fin_branche` termine une branche sans étape suivante (autres fournisseurs, facture récapitulative).
 
 ### 7.2 Étapes de la version 2026 v1
 
@@ -578,9 +590,9 @@ Rôles : **C** concepteur, **B** Benjamin (`gerant_bpa`), **V** Valentin (`geran
 | RELANCE_AVIS | Relance avis Google | C | Relancer par téléphone (C, J+7) | `fait` → ARCHIVAGE |
 | ARCHIVAGE | Archivage | C | Archiver dans Gesteos et dans PCloud (C, J+3) | `archive` → affaire `cloturee` |
 
-Toute fin d'affaire sans vente (`pas_de_r1`, `pas_de_r2`, `abandon`, `perdue`) mène à ARCHIVAGE avec statut `perdue` ou `abandonnee`.
+Toute fin d'affaire sans vente (`pas_de_r1`, `pas_de_r2`, `abandon`, `perdue`) mène à ARCHIVAGE avec statut `perdue` ou `abandonnee`. L'issue `archive` de l'archivage ne passe en `cloturee` qu'une affaire vendue : une affaire perdue ou abandonnée garde son statut.
 
-R4 peut être fait avant FACTURE_RECAP si le solde arrive tard : le moteur ouvre R4 dès la fin de chantier, en parallèle de SOLDE et FACTURE_RECAP.
+R4 peut être fait avant FACTURE_RECAP si le solde arrive tard : le moteur ouvre R4 dès la fin de chantier (issue `ok` de POSE ou `sav_ok` de SAV), en parallèle de SOLDE et FACTURE_RECAP ; la facture récapitulative termine sa branche (`fin_branche`).
 
 ### 7.3 Documents attendus et nommage PCloud
 
@@ -818,6 +830,13 @@ Toutes les notifications existent aussi dans l'interface (compteur dans la navig
 | Voir l'écran Règlements | Oui | Ses affaires (dans Ma journée) | Non |
 | Importer des données | Oui | Non | Non |
 | Administration | Oui | Non | Non |
+
+Précisions :
+- un client est visible d'une conceptrice dès qu'elle porte une de ses affaires dans son magasin (client qui revient dans un autre magasin) ;
+- les transverses voient une affaire selon la phase de ses étapes ouvertes : `r4_avis` en phase 06, `dossiers_pose` en phases 04 et 05 (lecture seule) ; la responsable R4 valide l'étape R4 et planifie ses RDV (rôle E de la section 7.2) ;
+- les tâches libres sont ouvertes à tous (D14) : chacun voit et coche ses tâches, un gérant voit toutes les tâches ;
+- réassigner une affaire (EF-41), donner un BPA et confirmer un planning (EF-61) sont gardés par trigger, car la RLS ne distingue pas les colonnes ;
+- aucune suppression depuis l'interface (6.1).
 
 Implémentation : fonctions SQL `prive.auth_role()`, `prive.auth_magasins()`, `prive.auth_rubriques()`, `prive.auth_est_admin()` utilisées par les politiques RLS. Elles vivent dans le schéma `prive`, que l'API REST n'expose pas. Chaque politique a un test pgTAP dans `supabase/tests`, exécuté par la CI sur la base éphémère (section 5.3).
 

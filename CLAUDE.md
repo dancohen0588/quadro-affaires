@@ -38,6 +38,14 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Fonctions SECURITY DEFINER (auth_*, app_now…) dans le schéma `prive`, non exposé par l'API REST ; jamais d'EXECUTE pour anon.
 - Vérifier les alertes Supabase (sécurité, performance) après chaque migration appliquée au projet distant.
 
+## Choix techniques (session 1.3)
+- Types de la base dans src/lib/db/types.ts (pnpm db:types, ou db:types:local sur la base locale) ; les clients Supabase sont typés.
+- Visibilité centralisée dans prive.affaire_visible / affaire_modifiable / client_visible / vente_visible : les politiques s'en servent, ne pas recopier la logique.
+- Gardes par trigger (EF-41, BPA, EF-61) : prive.est_gerant_ou_serveur() autorise aussi la clé secrète (seed, traitements de nuit).
+- Journal alimenté par prive.journaliser() ; personne n'écrit directement dans public.journal.
+- Process : définition dans process/2026-v1.json, chargée par chargerProcess() (Zod + cohérence) ; ne jamais lire le JSON sans le valider.
+- Tests pgTAP indépendants des données présentes (identifiants propres à chaque test).
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.

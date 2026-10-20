@@ -14,6 +14,7 @@ export default defineConfig({
     environment: "node",
     coverage: {
       include: ["src/lib/process/**", "src/lib/rules/**"],
+      exclude: ["**/*.test.ts"],
       thresholds: { lines: 90, functions: 90, branches: 90, statements: 90 }, // ENF-10
     },
   },

@@ -36,7 +36,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
+      - name: Tests et couverture (≥ 90 % sur src/lib/process et src/lib/rules, ENF-10)
+        run: pnpm test:couverture
       - run: pnpm build
 
   base:

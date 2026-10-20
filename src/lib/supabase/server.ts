@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/db/types";
 import { readSupabasePublicEnv } from "@/lib/env";
 
 /**
@@ -12,7 +13,7 @@ export async function clientUtilisateur() {
   // Lire les cookies d'abord : la page devient dynamique (jamais pré-rendue au build, où la config peut manquer).
   const cookieStore = await cookies();
   const { url, publishableKey } = readSupabasePublicEnv();
-  return createServerClient(url, publishableKey, {
+  return createServerClient<Database>(url, publishableKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (aPoser) => {
@@ -34,5 +35,5 @@ export function clientAdmin() {
   const { url } = readSupabasePublicEnv();
   const secret = process.env.SUPABASE_SECRET_KEY;
   if (!secret) throw new Error("SUPABASE_SECRET_KEY manquante (voir .env.example).");
-  return createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+  return createClient<Database>(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
 }

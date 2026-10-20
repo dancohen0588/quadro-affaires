@@ -1,0 +1,1282 @@
+{
+  "nom": "2026 v1",
+  "depart": "R0",
+  "phases": [
+    {
+      "code": "accueil",
+      "numero": "01",
+      "nom": "Accueil & découverte",
+      "couleur": "#3B6E8F",
+      "etapes": [
+        {
+          "code": "R0",
+          "titre": "Accueil client",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "noter_agenda",
+              "titre": "Noter le RDV ou le passage dans l'agenda",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "creer_contact",
+              "titre": "Créer le contact, ou cocher CNQ",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "saisir_rappel",
+              "titre": "Si un rappel est convenu, saisir sa date",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              },
+              "optionnelle": true
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "r1_pris",
+              "libelle": "R1 pris",
+              "type": "go",
+              "vers": "R1"
+            },
+            {
+              "code": "rappel_convenu",
+              "libelle": "Rappel convenu",
+              "type": "wait",
+              "demande_date": true
+            },
+            {
+              "code": "pas_de_r1",
+              "libelle": "Pas de R1",
+              "type": "end",
+              "vers": "ARCHIVAGE",
+              "motif_obligatoire": true,
+              "statut_affaire": "perdue"
+            }
+          ]
+        },
+        {
+          "code": "R1",
+          "titre": "Découverte",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "creer_affaires",
+              "titre": "Créer la ou les affaires",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "positionner_r2_r3",
+              "titre": "Positionner le R2 et le R3",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "positionner_points",
+              "titre": "Positionner le point technique et le point stratégique",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "enregistrer_entree",
+              "titre": "Enregistrer photos, plans et inspirations dans PCloud 01",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 1
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "entree_client",
+              "libelle": "Photos, plans et inspirations du client",
+              "dossier": "01 - Données d'Entrée",
+              "formats": [
+                "jpg",
+                "heic",
+                "pdf"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "r2_pris",
+              "libelle": "R2 pris",
+              "type": "go",
+              "vers": "R2"
+            },
+            {
+              "code": "pas_de_r2",
+              "libelle": "Pas de R2",
+              "type": "end",
+              "vers": "ARCHIVAGE",
+              "demande_avis_google": true,
+              "motif_obligatoire": true,
+              "statut_affaire": "perdue"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "conception",
+      "numero": "02",
+      "nom": "Conception",
+      "couleur": "#6B5B95",
+      "etapes": [
+        {
+          "code": "R2",
+          "titre": "Approfondissement à domicile",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "preparer_materiel",
+              "titre": "Préparer le matériel de relevé",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "rdv",
+                "jours": -1
+              }
+            },
+            {
+              "code": "preparer_releve",
+              "titre": "Préparer le relevé : plans, adresse, échantillons",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "rdv",
+                "jours": -1
+              }
+            },
+            {
+              "code": "realiser_existant",
+              "titre": "Réaliser l'existant après le R2",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "rdv",
+                "jours": 1
+              }
+            },
+            {
+              "code": "verifier_existant",
+              "titre": "Faire vérifier l'existant",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "rdv",
+                "jours": 2
+              }
+            },
+            {
+              "code": "point_technique",
+              "titre": "Point technique avec Benjamin ou Valentin",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "rdv",
+                "jours": 3
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "conception",
+              "libelle": "Passer en conception",
+              "type": "go",
+              "vers": "CONCEPTION"
+            },
+            {
+              "code": "sans_reponse",
+              "libelle": "Client sans réponse",
+              "type": "wait",
+              "relance_jours": 7
+            },
+            {
+              "code": "abandon",
+              "libelle": "Projet abandonné",
+              "type": "end",
+              "vers": "ARCHIVAGE",
+              "motif_obligatoire": true,
+              "statut_affaire": "abandonnee"
+            }
+          ]
+        },
+        {
+          "code": "CONCEPTION",
+          "titre": "Conception",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "photos_releve",
+              "titre": "Enregistrer les photos du relevé dans PCloud 01 › Relevés-Métrés",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 1
+              }
+            },
+            {
+              "code": "checklist_agem",
+              "titre": "Passer la check-list AGEM",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "rdv",
+                "rdv": "R3",
+                "jours": -1
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "releve",
+              "libelle": "Relevé et métrés",
+              "dossier": "01 - Données d'Entrée / Relevés-Métrés",
+              "formats": [
+                "jpg",
+                "heic",
+                "pdf"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "pret",
+              "libelle": "Prêt pour la présentation",
+              "type": "go",
+              "vers": "PREP_R3"
+            }
+          ]
+        },
+        {
+          "code": "PREP_R3",
+          "titre": "Préparation de la présentation",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "point_tech_strat",
+              "titre": "Point technique et stratégique",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "rdv",
+                "rdv": "R3",
+                "jours": -2
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "pret",
+              "libelle": "Présentation prête",
+              "type": "go",
+              "vers": "R3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "vente",
+      "numero": "03",
+      "nom": "Vente",
+      "couleur": "#B9812E",
+      "etapes": [
+        {
+          "code": "R3",
+          "titre": "Présentation",
+          "responsable": "concepteur",
+          "repetable": true,
+          "taches": [
+            {
+              "code": "checklist_qameleon",
+              "titre": "Passer la check-list Qaméléon",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "rdv",
+                "jours": 0
+              }
+            },
+            {
+              "code": "compte_rendu",
+              "titre": "Noter le compte rendu dans les notes du RDV",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "rdv",
+                "jours": 0
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "vente",
+              "libelle": "Vente",
+              "type": "go",
+              "vers": "VENTE"
+            },
+            {
+              "code": "r3_suivant",
+              "libelle": "Nouvelle présentation (R3.n)",
+              "type": "loop",
+              "vers": "R3",
+              "demande_date": true
+            },
+            {
+              "code": "relance_convenue",
+              "libelle": "Relance convenue",
+              "type": "wait",
+              "demande_date": true
+            },
+            {
+              "code": "perdue",
+              "libelle": "Affaire perdue",
+              "type": "end",
+              "vers": "ARCHIVAGE",
+              "demande_avis_google": true,
+              "motif_obligatoire": true,
+              "statut_affaire": "perdue"
+            }
+          ]
+        },
+        {
+          "code": "VENTE",
+          "titre": "Vente",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "verifier_chiffrage",
+              "titre": "Vérifier remises, TVA et chiffrage dans Gesteos",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "signer_bdc",
+              "titre": "Faire signer le BDC avec plans et visuels, remettre le cadeau client",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "creer_vente",
+              "titre": "Créer la vente et son échéancier dans l'outil",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "saisir_dates",
+              "titre": "Saisir les dates souhaitées de livraison et de pose",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "demander_avis",
+              "titre": "Demander un avis Google",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              }
+            },
+            {
+              "code": "facture_acompte",
+              "titre": "Éditer la facture d'acompte 1 dans Gesteos (chèque ou CB)",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 0
+              },
+              "optionnelle": true
+            }
+          ],
+          "documents": [
+            {
+              "code": "bdc",
+              "libelle": "BDC signé avec plans et visuels",
+              "dossier": "03 - BDC",
+              "gabarit_nom": "BDC {CONTREMARQUE} - {Projet}",
+              "formats": [
+                "pdf"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "vendu",
+              "libelle": "Vente enregistrée",
+              "type": "go",
+              "vers": "ACOMPTE_1"
+            }
+          ]
+        },
+        {
+          "code": "ACOMPTE_1",
+          "titre": "Règlement acompte 1",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "verifier_acompte_1",
+              "titre": "Vérifier la réception de l'acompte 1",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 3
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "recu",
+              "libelle": "Acompte 1 reçu",
+              "type": "go",
+              "vers": "PREP_COMMANDE",
+              "ouvre": [
+                {
+                  "etape": "AF_COMMANDE",
+                  "optionnel": true,
+                  "question": "Faut-il commander chez d'autres fournisseurs ?"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "commande",
+      "numero": "04",
+      "nom": "Commande",
+      "couleur": "#3A8073",
+      "etapes": [
+        {
+          "code": "PREP_COMMANDE",
+          "titre": "Préparation au passage de commande",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "verifications",
+              "titre": "Vérifications et dernières questions, plans carrés",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 2
+              }
+            },
+            {
+              "code": "validation_plans",
+              "titre": "Validation des plans par Benjamin",
+              "assignee": "gerant_bpa",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 2
+              },
+              "optionnelle": true
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "pret",
+              "libelle": "Prêt à commander",
+              "type": "go",
+              "vers": "COMMANDE_AGEM"
+            }
+          ]
+        },
+        {
+          "code": "COMMANDE_AGEM",
+          "titre": "Passage de commande AGEM",
+          "responsable": "concepteur",
+          "repetable": true,
+          "bloquee_si": [
+            "acompte_1_non_recu"
+          ],
+          "taches": [
+            {
+              "code": "envoyer_commande",
+              "titre": "Envoyer la commande à AGEM via Gesteos avec plans et visuels définitifs",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 1
+              }
+            },
+            {
+              "code": "enregistrer_debit",
+              "titre": "Enregistrer le débit Word dans PCloud 05",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 1
+              }
+            },
+            {
+              "code": "saisir_commande",
+              "titre": "Saisir n° de commande, semaine demandée, prix d'achat et points",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 1
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "debit_agem",
+              "libelle": "Débit de commande AGEM",
+              "dossier": "05 - Commande AGEM et autres fournisseurs / Commande AGEM",
+              "formats": [
+                "docx"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "envoyee",
+              "libelle": "Commande envoyée",
+              "type": "go",
+              "vers": "ARC"
+            }
+          ]
+        },
+        {
+          "code": "ARC",
+          "titre": "Réception ARC",
+          "responsable": "concepteur",
+          "repetable": true,
+          "taches": [
+            {
+              "code": "enregistrer_arc",
+              "titre": "Enregistrer l'ARC dans PCloud 06",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "aucune"
+              }
+            },
+            {
+              "code": "saisir_semaine",
+              "titre": "Saisir la semaine annoncée",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "aucune"
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "arc_agem",
+              "libelle": "ARC AGEM",
+              "dossier": "06 - ARC-BPA AGEM et autres fournisseurs / ARC-BPA AGEM / AR",
+              "gabarit_nom": "AR AGEM - {CONTREMARQUE} - {Projet} - S{SEM}",
+              "formats": [
+                "pdf"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "recu",
+              "libelle": "ARC reçu",
+              "type": "go",
+              "vers": "BPA"
+            }
+          ]
+        },
+        {
+          "code": "BPA",
+          "titre": "Confirmation AGEM et BPA",
+          "responsable": "gerant_bpa",
+          "repetable": true,
+          "taches": [
+            {
+              "code": "enregistrer_confirmation",
+              "titre": "Enregistrer la confirmation et les plans dans PCloud 06 › 02-BPA",
+              "assignee": "gerant_bpa",
+              "echeance": {
+                "depuis": "aucune"
+              }
+            },
+            {
+              "code": "enregistrer_retours_adv",
+              "titre": "Enregistrer les retours ADV",
+              "assignee": "gerant_bpa",
+              "echeance": {
+                "depuis": "aucune"
+              }
+            },
+            {
+              "code": "donner_bpa",
+              "titre": "Donner le BPA",
+              "assignee": "gerant_bpa",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 3,
+                "ouvres": true
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "bpa",
+              "libelle": "Confirmation AGEM et plans",
+              "dossier": "06 - ARC-BPA AGEM et autres fournisseurs / ARC-BPA AGEM / 02-BPA",
+              "gabarit_nom": "v{N}.01",
+              "formats": [
+                "pdf"
+              ]
+            },
+            {
+              "code": "retour_adv",
+              "libelle": "Retours ADV",
+              "dossier": "06 - ARC-BPA AGEM et autres fournisseurs / ARC-BPA AGEM / 02-BPA",
+              "gabarit_nom": "S00-00-0000000-{CLIENT}-{PROJET}-RETOUR SUR V{N}",
+              "formats": [
+                "pdf"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "bpa_donne",
+              "libelle": "BPA donné",
+              "type": "go",
+              "vers": "BL"
+            },
+            {
+              "code": "nouvelle_version",
+              "libelle": "Nouvelle version à vérifier",
+              "type": "loop",
+              "vers": "BPA"
+            }
+          ]
+        },
+        {
+          "code": "BL",
+          "titre": "Édition du BL",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "editer_bl",
+              "titre": "Éditer le BL dans Gesteos (enlever l'inutile, surligner l'acompte 2) et l'enregistrer dans PCloud 07",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 2
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "bl",
+              "libelle": "Bon de livraison",
+              "dossier": "07 - Livraison",
+              "gabarit_nom": "BL {CONTREMARQUE} - Livraison S{SEM}",
+              "formats": [
+                "pdf"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "fait",
+              "libelle": "BL édité",
+              "type": "go",
+              "vers": "PLANNING_LIVRAISON"
+            }
+          ]
+        },
+        {
+          "code": "PLANNING_LIVRAISON",
+          "titre": "Confirmation livraison AGEM et Transtock",
+          "responsable": "gerant_logistique",
+          "taches": [
+            {
+              "code": "confirmer_livraison",
+              "titre": "Confirmer « Livraison AGEM S00 et TRANSTOCK S00 » pour la contremarque",
+              "assignee": "gerant_logistique",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 2
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "confirme",
+              "libelle": "Livraison confirmée",
+              "type": "go",
+              "vers": "DOSSIER_POSE"
+            }
+          ]
+        },
+        {
+          "code": "DOSSIER_POSE",
+          "titre": "Dossier de pose",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "editer_dossier",
+              "titre": "Éditer le dossier de pose Gesteos, ajouter les plans 2020 (vue d'implantation) et les visuels dans PCloud 08",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 3
+              }
+            },
+            {
+              "code": "verifier_echeancier",
+              "titre": "Vérifier l'échéancier et la liste de fournitures",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 3
+              }
+            },
+            {
+              "code": "ajouter_plans_agem",
+              "titre": "Ajouter les plans AGEM",
+              "assignee": "gerant_bpa",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 3
+              }
+            },
+            {
+              "code": "verifier_dossier",
+              "titre": "Vérifier le dossier avant impression pour les menuisiers",
+              "assignee": "gerant_logistique",
+              "echeance": {
+                "premiere_de": [
+                  {
+                    "depuis": "ouverture_etape",
+                    "jours": 5
+                  },
+                  {
+                    "depuis": "date_pose",
+                    "jours": -7
+                  }
+                ]
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "dossier_pose",
+              "libelle": "Dossier de pose",
+              "dossier": "08 - Pose",
+              "formats": [
+                "pdf"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "complet",
+              "libelle": "Dossier complet",
+              "type": "go",
+              "vers": "MAIL_AVANT_POSE"
+            }
+          ]
+        },
+        {
+          "code": "AF_COMMANDE",
+          "titre": "Commande autres fournisseurs",
+          "branche": "autres_fournisseurs",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "commander",
+              "titre": "Commander via le canal du fournisseur",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 2
+              }
+            },
+            {
+              "code": "saisir_gesteos",
+              "titre": "Saisir la commande manuelle dans Gesteos",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 2
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "envoyee",
+              "libelle": "Commande envoyée",
+              "type": "go",
+              "vers": "AF_AR"
+            }
+          ]
+        },
+        {
+          "code": "AF_AR",
+          "titre": "Réception AR autres fournisseurs",
+          "branche": "autres_fournisseurs",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "enregistrer_ar",
+              "titre": "Enregistrer l'AR dans PCloud 06 › AR AUTRES FOURNISSEURS",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "aucune"
+              }
+            },
+            {
+              "code": "valider_delai",
+              "titre": "Valider le délai",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "aucune"
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "ar_fournisseur",
+              "libelle": "AR autre fournisseur",
+              "dossier": "06 - ARC-BPA AGEM et autres fournisseurs / AR AUTRES FOURNISSEURS",
+              "gabarit_nom": "AR {FOURNISSEUR} - {CONTREMARQUE} - {Projet} - S{SEM}",
+              "formats": [
+                "pdf"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "recu",
+              "libelle": "AR reçu",
+              "type": "go",
+              "vers": "AF_LISTE"
+            }
+          ]
+        },
+        {
+          "code": "AF_LISTE",
+          "titre": "Liste fourniture poseur",
+          "branche": "autres_fournisseurs",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "remplir_liste",
+              "titre": "Remplir la liste de fournitures du poseur dans PCloud 08",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 2
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "liste_fournitures",
+              "libelle": "Liste de fournitures du poseur",
+              "dossier": "08 - Pose",
+              "gabarit_nom": "{Client} - {Projet} - liste fourniture poseur",
+              "formats": [
+                "xlsx",
+                "docx",
+                "pdf"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "fait",
+              "libelle": "Liste remplie",
+              "type": "go",
+              "vers": "AF_CARTONS"
+            }
+          ]
+        },
+        {
+          "code": "AF_CARTONS",
+          "titre": "Cartons de fournitures",
+          "branche": "autres_fournisseurs",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "receptionner",
+              "titre": "Réceptionner, trier, ranger par contremarque et numéroter les cartons (1/2, 2/2)",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "aucune"
+              }
+            },
+            {
+              "code": "fiche_verte",
+              "titre": "Passer la fiche fournitures en vert",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "aucune"
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "fait",
+              "libelle": "Cartons prêts",
+              "type": "fin_branche"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "livraison_pose",
+      "numero": "05",
+      "nom": "Livraison & pose",
+      "couleur": "#B4483F",
+      "etapes": [
+        {
+          "code": "MAIL_AVANT_POSE",
+          "titre": "Mail récapitulatif avant pose",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "envoyer_mail",
+              "titre": "Envoyer le mail « Les clés d'une installation réussie ! »",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "date_pose",
+                "jours": -10
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "envoye",
+              "libelle": "Mail envoyé",
+              "type": "go",
+              "vers": "ACOMPTE_2"
+            }
+          ]
+        },
+        {
+          "code": "ACOMPTE_2",
+          "titre": "Règlement livraison",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "verifier_acompte_2",
+              "titre": "Vérifier la réception de l'acompte 2",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "date_livraison",
+                "jours": 2
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "recu",
+              "libelle": "Acompte 2 reçu",
+              "type": "go",
+              "vers": "POSE"
+            }
+          ]
+        },
+        {
+          "code": "POSE",
+          "titre": "Pose",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "photos_menuisiers",
+              "titre": "Enregistrer les photos des menuisiers dans PCloud 12",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "date_pose",
+                "jours": 3
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "photos_finales",
+              "libelle": "Photos finales",
+              "dossier": "12 - Photos Finales",
+              "formats": [
+                "jpg",
+                "heic"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "ok",
+              "libelle": "Pose terminée",
+              "type": "go",
+              "vers": "SOLDE",
+              "ouvre": [
+                {
+                  "etape": "R4"
+                }
+              ]
+            },
+            {
+              "code": "sav",
+              "libelle": "SAV nécessaire",
+              "type": "go",
+              "vers": "SAV"
+            }
+          ]
+        },
+        {
+          "code": "SAV",
+          "titre": "SAV",
+          "branche": "sav",
+          "responsable": "concepteur",
+          "repetable": true,
+          "taches": [
+            {
+              "code": "photos_sav",
+              "titre": "Enregistrer les photos du SAV dans PCloud 10 ou 11",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 1
+              }
+            },
+            {
+              "code": "recommande_agem",
+              "titre": "Si besoin, repasser commande AGEM (nouvelle itération commande, ARC, BPA)",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "aucune"
+              },
+              "optionnelle": true
+            },
+            {
+              "code": "valider_intervention",
+              "titre": "Valider la date d'intervention",
+              "assignee": "gerant_logistique",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 3
+              }
+            },
+            {
+              "code": "intervention",
+              "titre": "Réaliser l'intervention SAV",
+              "assignee": "gerant_logistique",
+              "echeance": {
+                "depuis": "aucune"
+              }
+            }
+          ],
+          "documents": [
+            {
+              "code": "photos_sav",
+              "libelle": "Photos du SAV",
+              "dossier": "10 - SAV",
+              "formats": [
+                "jpg",
+                "heic"
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "sav_ok",
+              "libelle": "SAV terminé",
+              "type": "go",
+              "vers": "SOLDE",
+              "ouvre": [
+                {
+                  "etape": "R4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "cloture",
+      "numero": "06",
+      "nom": "Clôture",
+      "couleur": "#5B6472",
+      "etapes": [
+        {
+          "code": "SOLDE",
+          "titre": "Règlement du solde",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "verifier_solde",
+              "titre": "Vérifier la réception du solde",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "fin_chantier",
+                "jours": 7
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "recu",
+              "libelle": "Solde reçu",
+              "type": "go",
+              "vers": "FACTURE_RECAP"
+            }
+          ]
+        },
+        {
+          "code": "FACTURE_RECAP",
+          "titre": "Facture récapitulative",
+          "responsable": "gerant_finance",
+          "taches": [
+            {
+              "code": "editer_facture",
+              "titre": "Éditer et envoyer la facture récapitulative avec la demande d'avis Google",
+              "assignee": "gerant_finance",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 3
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "envoyee",
+              "libelle": "Facture envoyée",
+              "type": "fin_branche",
+              "demande_avis_google": true
+            }
+          ]
+        },
+        {
+          "code": "R4",
+          "titre": "Rendez-vous de fin de chantier",
+          "responsable": "responsable_r4",
+          "taches": [
+            {
+              "code": "photos_fin_chantier",
+              "titre": "Prendre les photos de fin de chantier",
+              "assignee": "responsable_r4",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 15
+              }
+            },
+            {
+              "code": "demander_avis_r4",
+              "titre": "Demander un avis Google",
+              "assignee": "responsable_r4",
+              "echeance": {
+                "depuis": "rdv",
+                "rdv": "R4",
+                "jours": 0
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "fait",
+              "libelle": "R4 fait",
+              "type": "go",
+              "vers": "RELANCE_AVIS",
+              "vers_si_avis_obtenu": "ARCHIVAGE",
+              "demande_avis_google": true
+            }
+          ]
+        },
+        {
+          "code": "RELANCE_AVIS",
+          "titre": "Relance avis Google",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "relancer_telephone",
+              "titre": "Relancer par téléphone pour l'avis Google",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 7
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "fait",
+              "libelle": "Relance faite",
+              "type": "go",
+              "vers": "ARCHIVAGE",
+              "demande_avis_google": true
+            }
+          ]
+        },
+        {
+          "code": "ARCHIVAGE",
+          "titre": "Archivage",
+          "responsable": "concepteur",
+          "taches": [
+            {
+              "code": "archiver",
+              "titre": "Archiver dans Gesteos et dans PCloud",
+              "assignee": "concepteur",
+              "echeance": {
+                "depuis": "ouverture_etape",
+                "jours": 3
+              }
+            }
+          ],
+          "documents": [],
+          "issues": [
+            {
+              "code": "archive",
+              "libelle": "Affaire archivée",
+              "type": "end",
+              "statut_affaire": "cloturee"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
