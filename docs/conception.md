@@ -227,7 +227,7 @@ Règles du mode démo :
 - la commande `pnpm seed:demo` remet la base dans l'état de départ du scénario de démonstration (section 15.5) ;
 - les droits (RLS) sont les mêmes qu'en production : la démo montre le vrai cloisonnement par magasin.
 
-Horloge côté base : la date simulée doit être vue par le SQL aussi, sinon les triggers et les vues d'indicateurs restent à la date réelle pendant que l'interface avance. Deux fonctions SQL, `app_now()` (timestamptz) et `app_today()` (date, Europe/Paris), renvoient l'heure système décalée de `parametre.horloge_demo.decalage_secondes` (zéro si le réglage est nul). Un décalage plutôt qu'une date figée : deux écritures successives gardent leur ordre pendant la démo. Elles remplacent `now()` et `current_date` dans tous les triggers, vues et fonctions métier. L'adaptateur `Clock` côté TypeScript lit la même valeur.
+Horloge côté base : la date simulée doit être vue par le SQL aussi, sinon les triggers et les vues d'indicateurs restent à la date réelle pendant que l'interface avance. Deux fonctions SQL du schéma `prive`, `app_now()` (timestamptz) et `app_today()` (date, Europe/Paris), renvoient l'heure système décalée de `parametre.horloge_demo.decalage_secondes` (zéro si le réglage est nul). Un décalage plutôt qu'une date figée : deux écritures successives gardent leur ordre pendant la démo. Elles remplacent `now()` et `current_date` dans tous les triggers, vues et fonctions métier. L'adaptateur `Clock` côté TypeScript lit la même valeur.
 
 ---
 
@@ -819,7 +819,7 @@ Toutes les notifications existent aussi dans l'interface (compteur dans la navig
 | Importer des données | Oui | Non | Non |
 | Administration | Oui | Non | Non |
 
-Implémentation : fonctions SQL `auth_role()`, `auth_magasins()`, `auth_rubriques()`, `auth_est_admin()` utilisées par les politiques RLS. Chaque politique a un test pgTAP dans `supabase/tests`, exécuté par la CI sur la base éphémère (section 5.3).
+Implémentation : fonctions SQL `prive.auth_role()`, `prive.auth_magasins()`, `prive.auth_rubriques()`, `prive.auth_est_admin()` utilisées par les politiques RLS. Elles vivent dans le schéma `prive`, que l'API REST n'expose pas. Chaque politique a un test pgTAP dans `supabase/tests`, exécuté par la CI sur la base éphémère (section 5.3).
 
 ---
 

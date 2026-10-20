@@ -35,17 +35,17 @@ select throws_ok(
 -- ── Gérant ──
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-000000000001", "role": "authenticated"}';
-select is(public.auth_role(), 'gerant', 'gérant : rôle');
-select is(public.auth_est_admin(), true, 'gérant : administrateur');
-select is(cardinality(public.auth_magasins()), 3, 'gérant : voit les 3 magasins sans rattachement');
+select is(prive.auth_role(), 'gerant', 'gérant : rôle');
+select is(prive.auth_est_admin(), true, 'gérant : administrateur');
+select is(cardinality(prive.auth_magasins()), 3, 'gérant : voit les 3 magasins sans rattachement');
 select isnt_empty($$ update public.parametre set valeur = '{"decalage_secondes": 0}' where cle = 'horloge_demo' returning cle $$, 'gérant : modifie un paramètre (horloge de démo)');
 select lives_ok($$ insert into public.magasin (nom, code, societe_id) values ('Magasin D', 'MD', '00000000-0000-0000-0000-0000000000a1') $$, 'gérant : ajoute un magasin');
 
 -- ── Conceptrice ──
 set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-000000000002", "role": "authenticated"}';
-select is(public.auth_role(), 'conceptrice', 'conceptrice : rôle');
-select is(public.auth_est_admin(), false, 'conceptrice : pas administratrice');
-select is(public.auth_magasins(), array['00000000-0000-0000-0000-0000000000b1']::uuid[], 'conceptrice : seulement son magasin');
+select is(prive.auth_role(), 'conceptrice', 'conceptrice : rôle');
+select is(prive.auth_est_admin(), false, 'conceptrice : pas administratrice');
+select is(prive.auth_magasins(), array['00000000-0000-0000-0000-0000000000b1']::uuid[], 'conceptrice : seulement son magasin');
 select ok((select count(*) from public.profil) >= 4, 'conceptrice : voit ses collègues (assignation)');
 select is_empty($$ update public.parametre set valeur = '{"decalage_secondes": 99}' where cle = 'horloge_demo' returning cle $$, 'conceptrice : ne modifie pas les paramètres');
 select is_empty($$ update public.profil set role = 'gerant', est_admin = true where id = '00000000-0000-0000-0000-000000000002' returning id $$, 'conceptrice : ne peut pas s''élever en gérante');
@@ -53,12 +53,12 @@ select throws_ok($$ insert into public.magasin (nom, code, societe_id) values ('
 
 -- ── Transverse ──
 set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-000000000003", "role": "authenticated"}';
-select is(public.auth_rubriques(), array['r4_avis']::text[], 'transverse : ses rubriques');
+select is(prive.auth_rubriques(), array['r4_avis']::text[], 'transverse : ses rubriques');
 
 -- ── Profil inactif (EF-02) ──
 set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-000000000004", "role": "authenticated"}';
-select is(public.auth_role(), null, 'inactif : aucun rôle');
-select is(public.auth_magasins(), '{}'::uuid[], 'inactif : aucun magasin malgré son rattachement');
+select is(prive.auth_role(), null, 'inactif : aucun rôle');
+select is(prive.auth_magasins(), '{}'::uuid[], 'inactif : aucun magasin malgré son rattachement');
 select is_empty($$ select id from public.magasin $$, 'inactif : ne lit rien');
 
 -- ── Compte sans profil ──
