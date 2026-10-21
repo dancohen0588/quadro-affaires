@@ -749,6 +749,8 @@ Navigation latérale (teal) : Ma journée, Mes affaires, Pipeline, Planning, Rè
 - EF-40 Historique issu du `journal`, en langage clair (« Acompte 1 reçu (3 720,00 €) · Clara · 15 sept. »).
 - EF-41 Réassigner l'affaire (gérants).
 
+Précisions (session 2.2) : la réassignation transfère aussi à la nouvelle personne les tâches à faire de l'ancien concepteur sur l'affaire ; un RDV R4 ajouté depuis la fiche est posé chez la responsable R4 ; le dépôt de document et l'explorateur PCloud restent inactifs jusqu'au bloc J5 ; la liste `/affaires` est une version simple (recherche par libellé ou contremarque, mes affaires ou celles du magasin) en attendant la liste complète de la session 3.1.
+
 ### 9.5 Vente et règlements
 - EF-50 Créer une vente depuis une affaire en R3 ou VENTE : sélectionner les affaires du même client, saisir date de signature, montants HT et TTC, financement, référence de devis Gesteos.
 - EF-51 Échéancier généré (RG-10, RG-11), modifiable (RG-13).
