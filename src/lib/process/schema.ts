@@ -18,6 +18,7 @@ export type Role = z.infer<typeof roleSchema>;
 
 export const PHASES = ["accueil", "conception", "vente", "commande", "livraison_pose", "cloture"] as const;
 export const codePhaseSchema = z.enum(PHASES);
+export type CodePhase = z.infer<typeof codePhaseSchema>;
 
 export const TYPES_RDV = ["R0", "R1", "R2", "R3", "R4"] as const;
 
@@ -53,6 +54,8 @@ export const tacheModeleSchema = z.object({
   assignee: roleSchema,
   echeance: echeanceSchema,
   optionnelle: z.boolean().optional(),
+  /** Demande d'avis Google (D12) : la tâche n'est plus créée dès qu'un avis est obtenu (RG-36). */
+  avis_google: z.boolean().optional(),
 });
 export type TacheModele = z.infer<typeof tacheModeleSchema>;
 

@@ -11,7 +11,7 @@ export type Database = {
                   }
                   ComputedFields: never
                   Insert: {
-                    "archive_le"?: string | null,"avis_google_obtenu_le"?: string | null,"client_id": string,"concepteur_id": string,"contremarque": string,"created_at"?: string,"created_by"?: string | null,"derniere_activite_at"?: string,"etape_courante_code"?: string | null,"id"?: string,"libelle": string,"libelle_manuel"?: boolean,"magasin_id": string,"montant_devis_ht_cts"?: number | null,"motif_perte"?: string | null,"pcloud_folder_id"?: string | null,"pcloud_url"?: string | null,"process_version_id": string,"projet": string,"statut"?: string,"updated_at"?: string,"vente_id"?: string | null
+                    "archive_le"?: string | null,"avis_google_obtenu_le"?: string | null,"client_id": string,"concepteur_id": string,"contremarque": string,"created_at"?: string,"created_by"?: string | null,"derniere_activite_at": string,"etape_courante_code"?: string | null,"id"?: string,"libelle": string,"libelle_manuel"?: boolean,"magasin_id": string,"montant_devis_ht_cts"?: number | null,"motif_perte"?: string | null,"pcloud_folder_id"?: string | null,"pcloud_url"?: string | null,"process_version_id": string,"projet": string,"statut"?: string,"updated_at"?: string,"vente_id"?: string | null
                   }
                   Update: {
                     "archive_le"?: string | null,"avis_google_obtenu_le"?: string | null,"client_id"?: string,"concepteur_id"?: string,"contremarque"?: string,"created_at"?: string,"created_by"?: string | null,"derniere_activite_at"?: string,"etape_courante_code"?: string | null,"id"?: string,"libelle"?: string,"libelle_manuel"?: boolean,"magasin_id"?: string,"montant_devis_ht_cts"?: number | null,"motif_perte"?: string | null,"pcloud_folder_id"?: string | null,"pcloud_url"?: string | null,"process_version_id"?: string,"projet"?: string,"statut"?: string,"updated_at"?: string,"vente_id"?: string | null
@@ -575,7 +575,9 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "appliquer_effets":
+{ Args: { "affaire_id": string,"effets": Json,"ouvertes": (string)[] }; Returns: undefined
+                           }
           }
           Enums: {
             [_ in never]: never

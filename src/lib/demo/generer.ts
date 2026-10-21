@@ -9,14 +9,16 @@
  * Fonction pure : renvoie des lignes au format des tables, l'écriture en base est faite par le seed.
  */
 import type { Database } from "../db/types";
+import { creerMoteur } from "../process/moteur";
 import type { ProcessDefinition, Role } from "../process/schema";
 import { indexerEtapes } from "../process/valider";
+import { contremarqueParDefaut, libelleAffaire, type ClientIdentite } from "../rules/affaire";
 import { ajouterJours, ajouterJoursOuvres, estJourOuvre, semaineIso, type DateIso } from "../rules/calendrier";
 import { genererEcheancier } from "../rules/echeancier";
 import { creerAlea } from "./aleatoire";
 import { COMMUNES, NOMS, PRENOMS, RAISONS_SOCIALES, RUES, emailFictif, telephoneFictif } from "./noms";
 import type { CodeMagasin } from "./personnages";
-import { instantParis, positionnerAffaire, type EtapeOuverte, type EtapePassee } from "./positionner";
+import { rejouerAffaire, type Pas } from "./rejouer";
 
 type Insert<N extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][N]["Insert"];
 
@@ -91,6 +93,17 @@ const PROJETS = [
 ] as const;
 type Projet = (typeof PROJETS)[number][0];
 
+/** Horodatage ISO d'un jour à une heure de Paris (heure d'été ou d'hiver). */
+export function instantParis(date: DateIso, heure = "10:00"): string {
+  const midi = new Date(`${date}T12:00:00Z`);
+  const decalage =
+    new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", timeZoneName: "longOffset" })
+      .formatToParts(midi)
+      .find((p) => p.type === "timeZoneName")
+      ?.value.replace("GMT", "") || "+00:00";
+  return `${date}T${heure}:00${decalage}`;
+}
+
 const MOTIFS_R3 = [["prix", 35], ["concurrent", 20], ["réflexion longue", 20], ["délai", 10], ["injoignable", 10], ["autre", 5]] as const;
 const SOURCES = [["passage", 30], ["recommandation", 20], ["internet", 25], ["réseaux sociaux", 10], ["salon", 5], ["autre", 10]] as const;
 
@@ -144,6 +157,7 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
   const j0 = entree.aujourdhui;
   const def = entree.definition;
   const index = indexerEtapes(def);
+  const moteur = creerMoteur(def, { motifsAutorises: [...MOTIFS_R3.map(([m]) => m), "projet abandonné"] });
   const p = entree.profils;
   const referents: Record<Exclude<Role, "concepteur">, string> = {
     gerant_bpa: p.benjamin,
@@ -170,7 +184,6 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
     return a.entier(min / 50, max / 50) * 50 * 100; // HT en centimes, arrondi à 50 €
   };
   const choisirProjet = (): Projet => a.pondere(PROJETS.map(([nom, poids]) => [nom, poids] as const));
-  const libelleProjet = (projet: string) => projet.charAt(0).toUpperCase() + projet.slice(1);
 
   function nouveauClient(magasin: CodeMagasin, creeLe: DateIso, opts: { pro?: boolean; cnq?: boolean; rappel?: DateIso } = {}) {
     numero++;
@@ -205,19 +218,21 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
     client: Insert<"client">, magasin: CodeMagasin, concepteur: string, projet: Projet, creeLe: DateIso,
     champs: Partial<Insert<"affaire">>,
   ) {
-    const nomClient = client.raison_sociale ?? `${client.nom} ${client.prenom ?? ""}`.trim();
+    const identite = client as ClientIdentite;
     const affaire: Insert<"affaire"> = {
       id: a.uuid(),
       client_id: client.id!,
       magasin_id: entree.magasins[magasin],
       concepteur_id: p[concepteur],
       projet,
-      libelle: `${nomClient} · ${libelleProjet(projet)}`,
-      contremarque: nomClient,
+      libelle: libelleAffaire(identite, projet), // RG-03
+      contremarque: contremarqueParDefaut(identite),
       process_version_id: entree.processVersionId,
       montant_devis_ht_cts: montantProjet(projet),
       created_at: at(creeLe, "10:30"),
       updated_at: at(creeLe, "10:30"),
+      // Reprise d'historique : l'activité part de la création, les lignes liées l'avancent (RG-09).
+      derniere_activite_at: at(creeLe, "10:30"),
       created_by: p[concepteur],
       ...champs,
     };
@@ -432,10 +447,7 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
     const projets: Projet[] = multi ? ["cuisine", "dressing"] : [revient ? a.choix(["dressing", "placard", "bibliothèque"] as const) : choisirProjet()];
     const vendue = passe("VENTE") || courant === "VENTE";
     const affaires = projets.map((projet) =>
-      nouvelleAffaire(client, magasin, concepteur, projet, o.R0, {
-        statut: vendue ? "gagnee" : "active",
-        etape_courante_code: code,
-      }),
+      nouvelleAffaire(client, magasin, concepteur, projet, o.R0, { statut: vendue ? "gagnee" : "active" }),
     );
     for (const c of cas) jeu.cas[c].push(...affaires.map((x) => x.id!));
 
@@ -492,59 +504,54 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
       });
     }
 
-    // Étapes et tâches (fonction unique à remplacer en J2)
-    const rdvConnus = { R1: r1, R2: r2, R3: r3(iterationsR3), R4: ajouterJours(finChantier, 10) };
+    // Étapes et tâches : rejeu du moteur de process, validation par validation, aux dates du plan.
+    const pas: Pas[] = [];
+    for (let k = 0; k < iCourant; k++) {
+      const c = CHEMIN[k];
+      if (c === "R3") {
+        for (let n = 1; n < iterationsR3; n++) pas.push({ jour: r3(n), etape: "R3", issue: "r3_suivant", date: r3(n + 1) });
+        pas.push({ jour: o.VENTE, etape: "R3", issue: "vente" });
+        continue;
+      }
+      if (c === "ACOMPTE_1" && cas.includes("branche_autres_fournisseurs")) {
+        pas.push({ jour: o.PREP_COMMANDE, etape: c, issue: "recu", ouvrir: ["AF_COMMANDE"] });
+        continue;
+      }
+      if (sav && c === "POSE") {
+        pas.push({ jour: o.SOLDE, etape: c, issue: "sav" });
+        break;
+      }
+      pas.push({ jour: o[CHEMIN[k + 1]], etape: c, issue: issueVers(c, CHEMIN[k + 1]) });
+    }
+    // Présentations précédentes d'une affaire actuellement en R3.n.
+    if (courant === "R3") for (let n = 1; n < iterationsR3; n++) pas.push({ jour: r3(n), etape: "R3", issue: "r3_suivant", date: r3(n + 1) });
+    // Branche autres fournisseurs (section 7.4), ouverte à la réception de l'acompte 1 : étapes finies avant aujourd'hui.
+    if (cas.includes("branche_autres_fournisseurs") && passe("ACOMPTE_1")) {
+      let jour = o.PREP_COMMANDE;
+      for (const [af, duree] of BRANCHE_AF) {
+        jour = ajouterJours(jour, duree);
+        if (jour > j0) break;
+        const suite = BRANCHE_AF[BRANCHE_AF.findIndex(([c]) => c === af) + 1]?.[0];
+        pas.push({ jour, etape: af, issue: suite ? issueVers(af, suite) : "fait" });
+      }
+    }
+    const dates = {
+      rdv: { R1: r1, R2: r2, R3: r3(iterationsR3), R4: ajouterJours(finChantier, 10) },
+      datePose: passe("PLANNING_LIVRAISON") ? pose : null,
+      dateLivraison: passe("PLANNING_LIVRAISON") ? livraison : null,
+      finChantier: passe("POSE") ? finChantier : null,
+    };
+    const acompte1 = jeu.echeances.find((e) => e.vente_id === premiere.vente_id && e.type === "acompte_1")?.recu_le ?? null;
     for (const x of affaires) {
-      const passees: EtapePassee[] = [];
-      const ouvertes: EtapeOuverte[] = [];
-      for (let k = 0; k < iCourant; k++) {
-        const c = CHEMIN[k];
-        const suivante = sav && c === "POSE" ? "SAV" : CHEMIN[k + 1];
-        if (c === "R3") {
-          for (let n = 1; n < iterationsR3; n++) {
-            passees.push({ code: "R3", iteration: n, debut: ajouterJours(o.R3, ECART_R3N * (n - 1)), fin: r3(n), issue: "r3_suivant" });
-          }
-          passees.push({ code: "R3", iteration: iterationsR3, debut: ajouterJours(o.R3, ECART_R3N * (iterationsR3 - 1)), fin: o.VENTE, issue: "vente" });
-          continue;
-        }
-        if (sav && k > CHEMIN.indexOf("POSE")) break;
-        passees.push({ code: c, debut: o[c], fin: o[CHEMIN[k + 1]], issue: issueVers(c, suivante) });
-      }
-      const contexte = (debut: DateIso) => ({
-        ouverture: debut,
-        rdv: rdvConnus,
-        datePose: passe("PLANNING_LIVRAISON") ? pose : null,
-        dateLivraison: passe("PLANNING_LIVRAISON") ? livraison : null,
-        finChantier: passe("POSE") ? finChantier : null,
-      });
-      // Présentations précédentes d'une affaire actuellement en R3.n.
-      if (courant === "R3") {
-        for (let n = 1; n < iterationsR3; n++) {
-          passees.push({ code: "R3", iteration: n, debut: ajouterJours(o.R3, ECART_R3N * (n - 1)), fin: r3(n), issue: "r3_suivant" });
-        }
-      }
-      if (sav) {
-        ouvertes.push({ code: "SAV", debut: o.SOLDE, contexte: contexte(o.SOLDE) });
-      } else {
-        const debut = courant === "R3" ? ajouterJours(o.R3, ECART_R3N * (iterationsR3 - 1)) : o[courant];
-        ouvertes.push({ code: courant, iteration: courant === "R3" ? iterationsR3 : 1, debut, contexte: contexte(debut) });
-      }
-      // R4 en parallèle du solde (section 7.4), ouvert à la fin de chantier.
-      if (passe("POSE") && !sav) ouvertes.push({ code: "R4", debut: finChantier, contexte: contexte(finChantier) });
-      // Branche autres fournisseurs (section 7.4), ouverte à la réception de l'acompte 1.
+      const rejeu = rejouerAffaire(moteur, {
+        affaireId: x.id!, concepteurId: x.concepteur_id, referents, debut: o.R0, pas, aujourdhui: j0, dates,
+        vendueLe: vendue ? signature : null, acompte1Le: acompte1, instant: at,
+      }, a);
+      x.statut = rejeu.statut;
+      x.etape_courante_code = rejeu.etapeCourante;
+      jeu.etapes.push(...rejeu.etapes);
+      jeu.taches.push(...rejeu.taches);
       if (cas.includes("branche_autres_fournisseurs") && passe("ACOMPTE_1")) {
-        let debut = o.PREP_COMMANDE;
-        for (const [af, duree] of BRANCHE_AF) {
-          const fin = ajouterJours(debut, duree);
-          if (fin <= j0) {
-            const suite = BRANCHE_AF[BRANCHE_AF.findIndex(([c]) => c === af) + 1]?.[0];
-            passees.push({ code: af, debut, fin, issue: suite ? issueVers(af, suite) : "fait" });
-          } else {
-            ouvertes.push({ code: af, debut, contexte: contexte(debut) });
-            break;
-          }
-          debut = fin;
-        }
         jeu.commandes.push({
           id: a.uuid(), affaire_id: x.id!, fournisseur: "Électroménager (fournisseur fictif)",
           envoyee_le: ajouterJours(o.PREP_COMMANDE, 2), statut: "envoyee",
@@ -552,11 +559,6 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
           created_by: x.concepteur_id,
         });
       }
-      const { etapes, taches } = positionnerAffaire(def, {
-        affaireId: x.id!, concepteurId: x.concepteur_id, referents, passees, ouvertes, aujourdhui: j0,
-      }, a);
-      jeu.etapes.push(...etapes);
-      jeu.taches.push(...taches);
     }
   }
 

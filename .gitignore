@@ -36,3 +36,4 @@ docs/sources/*.orig.*
 .idea/
 .vscode/*
 !.vscode/settings.json
+*.tmp

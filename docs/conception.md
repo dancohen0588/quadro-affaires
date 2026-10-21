@@ -505,7 +505,8 @@ type Etape = {
   issues: Issue[];
 };
 type Role = "concepteur" | "gerant_bpa" | "gerant_logistique" | "gerant_finance" | "responsable_r4";
-type TacheModele = { code: string; titre: string; assignee: Role; echeance: Echeance; optionnelle?: boolean };
+type TacheModele = { code: string; titre: string; assignee: Role; echeance: Echeance; optionnelle?: boolean;
+  avis_google?: boolean };      // demande d'avis : non créée si l'avis est déjà obtenu (RG-36)
 type EcheanceSimple =
   | { depuis: "ouverture_etape" | "date_pose" | "date_livraison" | "fin_chantier"; jours: number; ouvres?: boolean }
   | { depuis: "rdv"; rdv?: "R0" | "R1" | "R2" | "R3" | "R4"; jours: number; ouvres?: boolean } // par défaut le RDV de l'étape
@@ -526,7 +527,7 @@ type Issue = {
 };
 ```
 
-Règles des types d'issue : `go` indique `vers` ; `loop` reboucle sur sa propre étape, qui doit être répétable ; `end` fixe le statut de l'affaire (motif obligatoire si perdue ou abandonnée, RG-06) ; `wait` demande une date ou une relance ; `fin_branche` termine une branche sans étape suivante (autres fournisseurs, facture récapitulative).
+Règles des types d'issue : `go` indique `vers` ; `loop` reboucle sur sa propre étape, qui doit être répétable ; `end` fixe le statut de l'affaire (motif obligatoire si perdue ou abandonnée, RG-06) ; `wait` demande une date ou une relance ; `fin_branche` termine une branche sans étape suivante (autres fournisseurs, facture récapitulative). `demande_avis_google` crée une tâche d'avis sur une issue `end` (R1 sans suite, R3 perdue) ; sur les autres issues, la demande est portée par les tâches marquées `avis_google` de l'étape.
 
 ### 7.2 Étapes de la version 2026 v1
 
@@ -623,7 +624,16 @@ Une affaire peut avoir plusieurs étapes `en_cours` en même temps :
 - R4 s'ouvre dès la fin de chantier, en parallèle de SOLDE et FACTURE_RECAP ;
 - un SAV peut relancer une itération COMMANDE_AGEM → ARC → BPA pendant que la branche principale attend.
 
-Le moteur raisonne donc toujours sur l'ensemble des `etape_instance` ouvertes de l'affaire : ouverture, validation, blocage et calcul des tâches se font étape par étape. `affaire.etape_courante_code` n'est qu'un résumé d'affichage (l'étape la plus avancée de la branche principale), recalculé après chaque validation ; aucune règle ne s'appuie dessus. Une affaire ne passe à ARCHIVAGE que lorsque toutes ses branches ouvertes sont terminées.
+Le moteur raisonne donc toujours sur l'ensemble des `etape_instance` ouvertes de l'affaire : ouverture, validation, blocage et calcul des tâches se font étape par étape. `affaire.etape_courante_code` n'est qu'un résumé d'affichage (l'étape ouverte la plus avancée de la branche principale, sans compter le R4 ouvert en parallèle : une affaire au solde affiche SOLDE ; à défaut une étape d'une autre branche, comme SAV ; sans étape ouverte, la dernière étape faite), recalculé après chaque validation ; aucune règle ne s'appuie dessus. Une affaire ne passe à ARCHIVAGE que lorsque toutes ses branches ouvertes sont terminées.
+
+Recommande AGEM pendant un SAV : l'action « Repasser une commande AGEM » ouvre une nouvelle itération de COMMANDE_AGEM dans la branche `sav` ; ARC puis BPA suivent dans cette branche, et la chaîne s'arrête après le BPA (pas de nouveau BL). Le SAV reste ouvert pendant la recommande.
+
+### 7.5 Moteur et écriture en base
+
+Le moteur (`src/lib/process/moteur.ts`) est pur : il reçoit l'état de l'affaire (étapes, tâches à faire, statut, acompte 1 reçu, avis obtenu) et une demande, et renvoie un refus motivé ou la liste des effets à écrire (fermer et ouvrir des étapes, annuler et créer des tâches, créer un RDV R3.n, changer le statut, recalculer l'étape courante). « Aujourd'hui » lui est fourni par Clock. Les server actions `validerEtape` et `repasserCommandeSav` lisent l'état avec les droits de l'utilisateur, appellent le moteur, puis `public.appliquer_effets(affaire, effets, ouvertes)`, qui écrit tout ou rien :
+- elle vérifie les droits (section 12) et refuse si les étapes ouvertes ont changé depuis la lecture (deux validations simultanées) ;
+- elle résout les rôles des tâches : concepteur de l'affaire, référent désigné dans `parametre`, et concepteur à défaut de référent ;
+- un RDV R3.n est posé à 10 h, heure de Paris, chez le concepteur ; l'heure se corrige ensuite dans le RDV.
 
 ---
 
@@ -633,7 +643,7 @@ Le moteur raisonne donc toujours sur l'ensemble des `etape_instance` ouvertes de
 
 | ID | Règle |
 | --- | --- |
-| RG-01 | L'étape COMMANDE_AGEM ne peut pas être validée tant qu'aucune échéance `acompte_1` de la vente n'a `recu_le` renseigné. Le bouton est désactivé et le motif affiché. Aucun autre blocage dur en V1. |
+| RG-01 | L'étape COMMANDE_AGEM ne peut pas être validée tant qu'aucune échéance `acompte_1` de la vente n'a `recu_le` renseigné. Le bouton est désactivé et le motif affiché. Aucun autre blocage dur en V1. La base le garantit aussi par trigger, pour toute écriture faite au nom d'un utilisateur. |
 
 ### 8.2 Affaires et process
 
@@ -836,7 +846,8 @@ Précisions :
 - les transverses voient une affaire selon la phase de ses étapes ouvertes : `r4_avis` en phase 06, `dossiers_pose` en phases 04 et 05 (lecture seule) ; la responsable R4 valide l'étape R4 et planifie ses RDV (rôle E de la section 7.2) ;
 - les tâches libres sont ouvertes à tous (D14) : chacun voit et coche ses tâches, un gérant voit toutes les tâches ;
 - réassigner une affaire (EF-41), donner un BPA et confirmer un planning (EF-61) sont gardés par trigger, car la RLS ne distingue pas les colonnes ;
-- aucune suppression depuis l'interface (6.1).
+- aucune suppression depuis l'interface (6.1) ;
+- la validation d'étape passe par `public.appliquer_effets` (section 7.5) ; la responsable R4 n'y valide que l'étape R4, ce qui ouvre RELANCE_AVIS ou ARCHIVAGE sans lui donner d'autres droits d'écriture.
 
 Implémentation : fonctions SQL `prive.auth_role()`, `prive.auth_magasins()`, `prive.auth_rubriques()`, `prive.auth_est_admin()` utilisées par les politiques RLS. Elles vivent dans le schéma `prive`, que l'API REST n'expose pas. Chaque politique a un test pgTAP dans `supabase/tests`, exécuté par la CI sur la base éphémère (section 5.3).
 
