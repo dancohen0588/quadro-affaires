@@ -32,6 +32,12 @@ export function readDemoAccessCode(env: Env = process.env): string | null {
   return code ? code : null;
 }
 
+/** Secret des routes de tâches planifiées (/api/cron/*). Chaîne vide considérée comme absente. */
+export function readCronSecret(env: Env = process.env): string | null {
+  const secret = env.CRON_SECRET?.trim();
+  return secret ? secret : null;
+}
+
 const supabaseSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),

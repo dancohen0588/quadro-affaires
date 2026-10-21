@@ -25,6 +25,8 @@ export interface MailSortant {
   type: TypeMail;
   objet: string;
   html: string;
+  /** Clé d'idempotence (traitements de nuit) : un même mail n'est jamais enregistré deux fois. */
+  cle?: string;
 }
 
 export interface Mailer {

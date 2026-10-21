@@ -849,6 +849,13 @@ Précisions (session 4.1) :
 
 Toutes les notifications existent aussi dans l'interface (compteur dans la navigation). Aucun SMS ni message au client final en V1.
 
+Précisions (session 4.2) :
+- les traitements de nuit tournent une fois par jour à 6 h 30 (Vercel Cron à 4 h 30 UTC, soit 6 h 30 l'été et 5 h 30 l'hiver) ; le digest du lundi part avec eux le lundi ;
+- ils créent les tâches d'alerte RG-20 (« Relancer le projet »), RG-22 (« Relancer AGEM »), RG-23 (« Relancer <fournisseur> »), une par épisode d'alerte, et le rappel RG-32 ; ces tâches automatiques ne comptent pas comme activité de l'affaire ;
+- le digest quotidien (jours ouvrés) liste tâches du jour, en retard, relances, règlements à suivre et alertes de la personne, selon la colonne « Effet » de la section 8.4 (RG-21 : Benjamin et les gérants ; RG-24 à RG-26 : concepteur et Jean ; RG-28, RG-29 : Valentin et concepteur) ; il n'est envoyé qu'à qui a quelque chose à faire ;
+- tout est idempotent (clés uniques sur `tache.cle` et `mail_sortant.cle`) : un cron rejoué ou une horloge ramenée puis avancée ne crée pas de doublon ;
+- démo : l'horloge (gérants) avance d'un jour, d'une semaine ou jusqu'au lundi 7 h en rejouant chaque nuit franchie ; la boîte d'envoi montre chaque mail tel qu'il partirait.
+
 ---
 
 ## 12. Droits d'accès
