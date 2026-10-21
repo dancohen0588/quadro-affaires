@@ -37,7 +37,7 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-000000000001", "role": "authenticated"}';
 select is(prive.auth_role(), 'gerant', 'gérant : rôle');
 select is(prive.auth_est_admin(), true, 'gérant : administrateur');
-select is(cardinality(prive.auth_magasins()), 3, 'gérant : voit les 3 magasins sans rattachement');
+select is(cardinality(prive.auth_magasins()), (select count(*)::int from public.magasin), 'gérant : voit tous les magasins sans rattachement');
 select isnt_empty($$ update public.parametre set valeur = '{"decalage_secondes": 0}' where cle = 'horloge_demo' returning cle $$, 'gérant : modifie un paramètre (horloge de démo)');
 select lives_ok($$ insert into public.magasin (nom, code, societe_id) values ('Magasin D', 'MD', '00000000-0000-0000-0000-0000000000a1') $$, 'gérant : ajoute un magasin');
 

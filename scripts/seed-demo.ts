@@ -1,13 +1,16 @@
 /**
  * pnpm seed:demo — remet la base de démo dans l'état de départ (docs/conception.md, section 15.5).
  *
- * Session 1.2 : référentiel (sociétés, magasins), comptes des 11 personnages, profils, rattachements,
- * gérants référents, horloge remise à l'heure réelle. Les affaires fictives arrivent en session 1.4.
+ * Sessions 1.2 et 1.3 : référentiel (sociétés, magasins), comptes des 11 personnages, profils, rattachements,
+ * process 2026 v1, gérants référents, horloge remise à l'heure réelle. Les affaires fictives arrivent en session 1.4.
  *
  * Sécurités : refuse de tourner si APP_MODE n'est pas « demo » ; ne supprime que les comptes du domaine
  * de démo ; travaille avec la clé secrète (contourne la RLS), jamais exposée au navigateur.
  */
+import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "../src/lib/db/types";
+import { chargerProcess } from "../src/lib/process/valider";
 import {
   DOMAINE_DEMO,
   MAGASINS,
@@ -39,7 +42,7 @@ async function main() {
   const url = exiger("NEXT_PUBLIC_SUPABASE_URL");
   const motDePasse = exiger("DEMO_PERSONA_PASSWORD");
   if (motDePasse.length < 16) throw new Error("DEMO_PERSONA_PASSWORD doit faire au moins 16 caractères.");
-  const db = createClient(url, exiger("SUPABASE_SECRET_KEY"), {
+  const db = createClient<Database>(url, exiger("SUPABASE_SECRET_KEY"), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
@@ -53,6 +56,12 @@ async function main() {
     ok(r, etape);
     if (r.data === null || r.data === undefined) throw new Error(`${etape} : réponse vide`);
     return r.data as T;
+  };
+
+  const idDe = (index: Map<string, string>, code: string, quoi: string): string => {
+    const id = index.get(code);
+    if (!id) throw new Error(`${quoi} introuvable : ${code}`);
+    return id;
   };
 
   // 1. Supprimer les comptes de démo existants (les profils et rattachements suivent en cascade).
@@ -76,7 +85,7 @@ async function main() {
   const idSociete = new Map(societes.map((s) => [s.code, s.id]));
   ok(
     await db.from("magasin").upsert(
-      MAGASINS.map((m) => ({ code: m.code, nom: m.nom, societe_id: idSociete.get(m.societe) })),
+      MAGASINS.map((m) => ({ code: m.code, nom: m.nom, societe_id: idDe(idSociete, m.societe, "Société") })),
       { onConflict: "code" },
     ),
     "Magasins",
@@ -112,12 +121,26 @@ async function main() {
       `Profil de ${p.prenom}`,
     );
     ok(
-      await db.from("profil_magasin").insert(p.magasins.map((code) => ({ profil_id: user.id, magasin_id: idMagasin.get(code) }))),
+      await db.from("profil_magasin").insert(p.magasins.map((code) => ({ profil_id: user.id, magasin_id: idDe(idMagasin, code, "Magasin") }))),
       `Magasins de ${p.prenom}`,
     );
   }
 
-  // 4. Gérants référents et horloge remise à l'heure réelle.
+  // 4. Modèle de process 2026 v1 (section 7), validé avant publication ; seule version active.
+  const definition = chargerProcess(JSON.parse(readFileSync("process/2026-v1.json", "utf8")));
+  ok(
+    await db.from("process_version").update({ active: false }).neq("nom", definition.nom),
+    "Désactivation des autres versions",
+  );
+  ok(
+    await db.from("process_version").upsert(
+      { nom: definition.nom, definition, active: true, publiee_le: new Date().toISOString(), publiee_par: idProfil.get("jean") },
+      { onConflict: "nom" },
+    ),
+    "Process 2026 v1",
+  );
+
+  // 5. Gérants référents et horloge remise à l'heure réelle.
   for (const p of PERSONNAGES.filter((x) => x.referent)) {
     ok(
       await db.from("parametre").update({ valeur: idProfil.get(p.cle) }).eq("cle", p.referent!),
@@ -128,7 +151,7 @@ async function main() {
 
   console.log(
     `Seed de démo terminé : ${supprimes} ancien(s) compte(s) supprimé(s), ${SOCIETES.length} sociétés, ` +
-      `${MAGASINS.length} magasins, ${PERSONNAGES.length} personnages.`,
+      `${MAGASINS.length} magasins, ${PERSONNAGES.length} personnages, process « ${definition.nom} » actif.`,
   );
 }
 
