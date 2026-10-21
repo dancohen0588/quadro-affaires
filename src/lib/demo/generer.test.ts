@@ -111,7 +111,7 @@ describe("jeu de démo (session 1.4)", () => {
       }
       // Les tâches gardées sont celles des étapes ouvertes.
       const ids = new Set(ouvertes(x.id!).map((e) => e.id));
-      for (const t of jeu.taches.filter((y) => y.affaire_id === x.id)) expect(ids.has(t.etape_instance_id!)).toBe(true);
+      for (const t of jeu.taches.filter((y) => y.affaire_id === x.id && y.etape_instance_id)) expect(ids.has(t.etape_instance_id!)).toBe(true);
     }
     // RG-01 : aucune commande AGEM validée avant la réception de l'acompte 1.
     for (const e of jeu.etapes.filter((y) => y.etape_code === "COMMANDE_AGEM" && y.statut === "faite")) {

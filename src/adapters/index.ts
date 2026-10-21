@@ -1,7 +1,8 @@
 import "server-only";
 import { readAppMode, type AppMode } from "@/lib/env";
 import { SystemClock } from "./clock";
-import { DemoCalendarSource, DemoClock, DemoMailer, boiteEnvoiMemoire, demoAuth, demoFileStore } from "./demo";
+import { DemoCalendarSource, DemoClock, DemoMailer, demoAuth, demoFileStore } from "./demo";
+import { enregistrerMailDemo } from "./boite-envoi";
 import { lireDecalageDemo } from "./horloge-demo";
 import { NonDisponibleError, type Adaptateurs } from "./types";
 
@@ -14,11 +15,10 @@ export type { Adaptateurs } from "./types";
  */
 export function creerAdaptateurs(mode: AppMode): Adaptateurs {
   if (mode === "demo") {
-    // Horloge lue en base (parametre.horloge_demo) ; RDV et boîte d'envoi branchés en J3 et J4.
-    const boite = boiteEnvoiMemoire();
+    // Horloge lue en base (parametre.horloge_demo), mails enregistrés dans mail_sortant.
     return {
       auth: demoAuth,
-      mailer: new DemoMailer(boite.enregistrer),
+      mailer: new DemoMailer(enregistrerMailDemo),
       fileStore: demoFileStore,
       calendar: new DemoCalendarSource(async () => []),
       clock: new DemoClock(lireDecalageDemo),

@@ -12,7 +12,7 @@ export type Referentiel = {
   concepteurs: { id: string; nom: string; magasins: string[] }[];
   /** Personnes à qui confier une tâche libre (EF-13). */
   personnes: { id: string; nom: string }[];
-  seuils: { max_r2_par_jour: number; max_r3_par_semaine: number; inactivite_jours: number };
+  seuils: { max_r2_par_jour: number; max_r3_par_semaine: number; inactivite_jours: number; retard_bpa_jours_ouvres: number };
 };
 
 export async function chargerReferentiel(moi: ProfilCourant): Promise<Referentiel> {
@@ -41,6 +41,7 @@ export async function chargerReferentiel(moi: ProfilCourant): Promise<Referentie
       max_r2_par_jour: seuils.max_r2_par_jour ?? 1,
       max_r3_par_semaine: seuils.max_r3_par_semaine ?? 4,
       inactivite_jours: seuils.inactivite_jours ?? 10,
+      retard_bpa_jours_ouvres: seuils.retard_bpa_jours_ouvres ?? 3,
     },
   };
 }

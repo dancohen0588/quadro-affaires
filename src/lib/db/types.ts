@@ -584,8 +584,14 @@ isOneToOne: false
             "appliquer_effets":
 { Args: { "affaire_id": string,"effets": Json,"ouvertes": (string)[] }; Returns: undefined
                            },
+"confirmer_planning":
+{ Args: { "commentaire": string,"date_pose": string,"poseur": string,"semaine": string,"statut": string,"vente_id": string }; Returns: undefined
+                           },
 "creer_affaires":
 { Args: { "affaires": Json,"client_id": string }; Returns: (string)[]
+                           },
+"creer_vente":
+{ Args: { "affaires": Json,"echeances": Json,"planning": Json,"vente": Json }; Returns: string
                            },
 "identite_client":
 { Args: { "client_id": string }; Returns: {

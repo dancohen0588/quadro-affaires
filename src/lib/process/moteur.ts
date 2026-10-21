@@ -74,6 +74,8 @@ export type Effet =
   | { type: "fermer_etape"; etape: string; iteration: number; issue: string; motif: string | null; quand: string; par: string }
   | { type: "sauter_etape"; etape: string; iteration: number; motif: string; quand: string; par: string }
   | { type: "annuler_taches"; etape: string; iteration: number }
+  /** Tâches accomplies par l'action appelante (jamais produit par le moteur lui-même). */
+  | { type: "faire_taches"; etape: string; iteration: number; codes: string[] }
   | { type: "ouvrir_etape"; etape: string; iteration: number; branche: Branche; phase: CodePhase; quand: string }
   | {
       type: "creer_tache";

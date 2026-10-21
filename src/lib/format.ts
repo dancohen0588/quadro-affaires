@@ -62,3 +62,23 @@ export function instantParis(date: DateIso, heureLocale = "10:00"): string {
       ?.value.replace("GMT", "") || "+00:00";
   return `${date}T${heureLocale}:00${decalage}`;
 }
+
+/**
+ * Montant saisi en euros → centimes : « 12 400,50 », « 12400.5 », « 12 400 € ». null si illisible.
+ * Les montants restent des entiers de centimes (section 2).
+ */
+export function centimesDepuis(texte: string): number | null {
+  const net = texte.replace(/[\s  €]/g, "").replace(",", ".");
+  if (!/^\d+(\.\d{1,2})?$/.test(net)) return null;
+  const [entier, decimales = ""] = net.split(".");
+  return Number(entier) * 100 + Number(decimales.padEnd(2, "0"));
+}
+
+/** Champ HTML de type « week » (« 2026-W47 ») ↔ semaine de la base (« 2026-S47 »). */
+export function semaineDepuisChamp(valeur: string): string | null {
+  const m = /^(\d{4})-W(\d{2})$/.exec(valeur);
+  return m ? `${m[1]}-S${m[2]}` : null;
+}
+export function champDepuisSemaine(semaine: string | null): string {
+  return semaine ? semaine.replace("-S", "-W") : "";
+}

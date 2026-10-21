@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { datesAttendues, erreursEcheancier, genererEcheancier } from "./echeancier";
+import { datesAttendues, erreursEcheancier, etatEcheance, genererEcheancier, toutesRecues } from "./echeancier";
 
 describe("échéancier de règlement (RG-10 à RG-13)", () => {
   it("génère 40 / 50 / 10 sur le TTC, acompte 1 attendu à la signature (RG-10, RG-12)", () => {
@@ -45,5 +45,21 @@ describe("échéancier de règlement (RG-10 à RG-13)", () => {
     expect(datesAttendues({ dateLivraison: "2026-11-23", datePose: "2026-11-26" })).toEqual({ acompte_2: "2026-11-23", solde: "2026-11-26" });
     expect(datesAttendues({ dateLivraison: null, datePose: "2026-11-26", dureeChantierJours: 2 })).toEqual({ acompte_2: null, solde: "2026-11-28" });
     expect(datesAttendues({ dateLivraison: null, datePose: null })).toEqual({ acompte_2: null, solde: null });
+  });
+});
+
+describe("état des échéances (EF-52, RG-15)", () => {
+  const e = (x: Partial<Parameters<typeof etatEcheance>[0]>) => ({ montantPrevuCts: 1000, montantRecuCts: null, recuLe: null, dateAttendue: null, ...x });
+  it("distingue reçue, partielle, en retard, attendue et à planifier", () => {
+    expect(etatEcheance(e({ recuLe: "2026-10-01", montantRecuCts: 1000 }), "2026-10-21")).toBe("recue");
+    expect(etatEcheance(e({ recuLe: "2026-10-01", montantRecuCts: 400 }), "2026-10-21")).toBe("partielle");
+    expect(etatEcheance(e({ dateAttendue: "2026-10-20" }), "2026-10-21")).toBe("en_retard");
+    expect(etatEcheance(e({ dateAttendue: "2026-10-21" }), "2026-10-21")).toBe("attendue");
+    expect(etatEcheance(e({}), "2026-10-21")).toBe("a_planifier");
+  });
+  it("sait quand tout est reçu", () => {
+    expect(toutesRecues([{ recuLe: "2026-10-01" }, { recuLe: "2026-10-02" }])).toBe(true);
+    expect(toutesRecues([{ recuLe: "2026-10-01" }, { recuLe: null }])).toBe(false);
+    expect(toutesRecues([])).toBe(false);
   });
 });

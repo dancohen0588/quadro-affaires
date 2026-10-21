@@ -11,6 +11,8 @@ import { clientUtilisateur } from "@/lib/supabase/server";
 import { cleEtape } from "@/lib/process/etat";
 import { chargerAffaireProcess } from "./process";
 import type { ProfilCourant } from "./session";
+import type { CommandeVue } from "@/components/commandes/bloc-commandes";
+import type { EcheanceVue } from "@/components/vente/dialogues-vente";
 
 /**
  * Données de la fiche affaire (EF-30 à EF-41), lues avec les droits de l'utilisateur (RLS) :
@@ -55,9 +57,20 @@ export type Fiche = {
   concepteur: { id: string; prenom: string; nom: string };
   client: { id: string; nom: string; telephone: string | null; email: string | null; adresse: string | null; type: string };
   montantDevisHtCts: number | null;
-  vente: { dateSignature: string; montantTtcCts: number } | null;
-  echeances: { type: string; recuLe: string | null; dateAttendue: string | null; montantPrevuCts: number }[];
-  planning: { semaineLivraison: string | null; livraisonConfirmee: boolean; datePose: string | null; poseConfirmee: boolean; poseur: string | null } | null;
+  vente: {
+    id: string; dateSignature: string; montantHtCts: number; montantTtcCts: number; financement: string; gesteosRef: string | null;
+    commissionLe: string | null; affaires: string[];
+  } | null;
+  echeances: EcheanceVue[];
+  planning: {
+    statut: string; semaineLivraison: string | null; livraisonConfirmee: boolean; datePose: string | null; poseConfirmee: boolean; poseur: string | null;
+    semaineSouhaitee: string | null; datePoseSouhaitee: string | null; proposition: { semaine: string | null; datePose: string | null } | null;
+    commentaire: string | null;
+  } | null;
+  commandes: CommandeVue[];
+  /** Affaires du même client vendables ensemble (EF-50), si cette affaire est en présentation ou en vente. */
+  vendables: { id: string; libelle: string; montantDevisHtCts: number | null }[] | null;
+  estGerant: boolean;
   rdv: RdvVue[];
   process: { nom: string; phases: PhaseVue[]; faites: number; total: number };
   aValider: EtapeAValider[];
@@ -70,6 +83,9 @@ export type Fiche = {
   peutModifier: boolean;
   aujourdhui: string;
 };
+
+/** RG-08 : l'étape VENTE se valide en créant la vente, jamais seule. */
+export const MESSAGE_VENTE = "Créez la vente depuis le bloc « Vente et règlements » : l'étape se valide avec elle (RG-08).";
 
 const ROLES_REFERENTS: Exclude<Role, "concepteur">[] = ["gerant_bpa", "gerant_logistique", "gerant_finance", "responsable_r4"];
 
@@ -103,22 +119,30 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
     db.from("rdv").select("id, type, rang, debut, statut, notes, profil_id").eq("affaire_id", affaireId).order("debut"),
     db.from("document").select("type_doc, nom_final, created_at").eq("affaire_id", affaireId),
     db.from("journal")
-      .select("id, table_nom, action, avant, apres, auteur_id, at")
+      .select("id, table_nom, ligne_id, action, avant, apres, auteur_id, at")
       .or(venteId ? `affaire_id.eq.${affaireId},vente_id.eq.${venteId}` : `affaire_id.eq.${affaireId}`)
       .order("at", { ascending: false })
       .limit(300),
     db.from("profil").select("id, prenom, nom, initiales, role, actif"),
     db.from("parametre").select("cle, valeur").in("cle", [...ROLES_REFERENTS, "motifs_non_vente"]),
-    venteId ? db.from("vente").select("date_signature, montant_ttc_cts").eq("id", venteId).maybeSingle() : Promise.resolve({ data: null, error: null }),
-    venteId ? db.from("echeance").select("type, ordre, recu_le, date_attendue, montant_prevu_cts").eq("vente_id", venteId).order("ordre") : Promise.resolve({ data: [], error: null }),
     venteId
-      ? db.from("planning").select("semaine_livraison_souhaitee, semaine_livraison_confirmee, date_pose_souhaitee, date_pose_confirmee, poseur, statut").eq("vente_id", venteId).maybeSingle()
+      ? db.from("vente").select("id, date_signature, montant_ht_cts, montant_ttc_cts, financement, gesteos_devis_ref, commission_saisie_le, affaire(libelle)").eq("id", venteId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    venteId
+      ? db.from("echeance").select("id, type, ordre, recu_le, montant_recu_cts, date_attendue, montant_prevu_cts, mode, commentaire").eq("vente_id", venteId).order("ordre")
+      : Promise.resolve({ data: [], error: null }),
+    venteId
+      ? db.from("planning").select("semaine_livraison_souhaitee, semaine_livraison_confirmee, date_pose_souhaitee, date_pose_confirmee, poseur, statut, commentaire").eq("vente_id", venteId).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
   for (const r of [etapes, taches, rdv, documents, journal, profils, parametres, vente, echeances, planning]) {
     if (r.error) throw new Error(`Lecture de la fiche : ${r.error.message}`);
   }
   if (!processus) return null;
+  const [{ data: commandes }, { data: memeClient }] = await Promise.all([
+    db.from("commande_fournisseur").select("*").eq("affaire_id", affaireId).order("created_at"),
+    db.from("affaire").select("id, libelle, montant_devis_ht_cts, statut, vente_id").eq("client_id", x.client.id).eq("statut", "active"),
+  ]);
 
   const aujourdhui = await adaptateurs().clock.today();
   const definition = processus.moteur.definition;
@@ -148,7 +172,7 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
         demandeDate: !!i.demande_date,
         options: (i.ouvre ?? []).filter((o) => o.optionnel).map((o) => ({ etape: o.etape, question: o.question ?? `Ouvrir ${etapesDef.get(o.etape)?.etape.titre ?? o.etape} ?` })),
       })),
-      blocage: processus.moteur.blocage(processus.etat, e.code),
+      blocage: processus.moteur.blocage(processus.etat, e.code) ?? (e.code === "VENTE" ? MESSAGE_VENTE : null),
       autorisee: peutModifier || (r4 && e.code === "R4"),
     };
   });
@@ -156,7 +180,9 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
   const courant = processus.moteur.etapeCourante(processus.etat.etapes);
   const defCourant = courant ? etapesDef.get(courant) : undefined;
   const nom = nomClient(x.client);
-  const semaine = planning.data?.semaine_livraison_confirmee ?? planning.data?.semaine_livraison_souhaitee ?? null;
+  const confirme = planning.data?.statut === "confirmee";
+  const semaine = (confirme ? planning.data?.semaine_livraison_confirmee : null) ?? planning.data?.semaine_livraison_souhaitee ?? null;
+  const ouvertesIci = processus.moteur.ouvertes(processus.etat).map((e) => e.code);
   const personne = (id: unknown) => {
     const p = typeof id === "string" ? parProfil.get(id) : undefined;
     return p ? { prenom: p.prenom, initiales: p.initiales } : null;
@@ -184,17 +210,46 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
       adresse: [x.client.adresse, [x.client.code_postal, x.client.ville].filter(Boolean).join(" ")].filter(Boolean).join(", ") || null,
     },
     montantDevisHtCts: x.montant_devis_ht_cts,
-    vente: vente.data ? { dateSignature: vente.data.date_signature, montantTtcCts: vente.data.montant_ttc_cts } : null,
-    echeances: (echeances.data ?? []).map((e) => ({ type: e.type, recuLe: e.recu_le, dateAttendue: e.date_attendue, montantPrevuCts: e.montant_prevu_cts })),
-    planning: planning.data
+    vente: vente.data
       ? {
-          semaineLivraison: semaine,
-          livraisonConfirmee: !!planning.data.semaine_livraison_confirmee,
-          datePose: planning.data.date_pose_confirmee ?? planning.data.date_pose_souhaitee,
-          poseConfirmee: !!planning.data.date_pose_confirmee,
-          poseur: planning.data.poseur,
+          id: vente.data.id, dateSignature: vente.data.date_signature, montantHtCts: vente.data.montant_ht_cts, montantTtcCts: vente.data.montant_ttc_cts,
+          financement: vente.data.financement, gesteosRef: vente.data.gesteos_devis_ref, commissionLe: vente.data.commission_saisie_le,
+          affaires: ((vente.data.affaire ?? []) as { libelle: string }[]).map((a) => a.libelle).sort((a, b) => a.localeCompare(b, "fr")),
         }
       : null,
+    echeances: (echeances.data ?? []).map((e) => ({
+      id: e.id, type: e.type, ordre: e.ordre, recuLe: e.recu_le, montantRecuCts: e.montant_recu_cts, dateAttendue: e.date_attendue,
+      montantPrevuCts: e.montant_prevu_cts, mode: e.mode, commentaire: e.commentaire,
+    })),
+    planning: planning.data
+      ? {
+          statut: planning.data.statut,
+          semaineLivraison: semaine,
+          livraisonConfirmee: confirme && !!planning.data.semaine_livraison_confirmee,
+          datePose: (confirme ? planning.data.date_pose_confirmee : null) ?? planning.data.date_pose_souhaitee,
+          poseConfirmee: confirme && !!planning.data.date_pose_confirmee,
+          poseur: planning.data.poseur,
+          semaineSouhaitee: planning.data.semaine_livraison_souhaitee,
+          datePoseSouhaitee: planning.data.date_pose_souhaitee,
+          proposition: planning.data.statut === "decalee"
+            ? { semaine: planning.data.semaine_livraison_confirmee, datePose: planning.data.date_pose_confirmee }
+            : null,
+          commentaire: planning.data.commentaire,
+        }
+      : null,
+    commandes: (commandes ?? []).map((c) => ({
+      id: c.id, fournisseur: c.fournisseur, iteration: c.iteration, gesteosRef: c.gesteos_commande_ref, envoyeeLe: c.envoyee_le,
+      semaineDemandee: c.semaine_demandee, lieuLivraison: c.lieu_livraison, prixAchatCts: c.prix_achat_cts, points: c.points === null ? null : Number(c.points),
+      arcRecuLe: c.arc_recu_le, arRecuLe: c.ar_recu_le, semaineAnnoncee: c.semaine_annoncee, confirmationRecueLe: c.confirmation_recue_le,
+      bpaVersion: c.bpa_version, bpaDonneLe: c.bpa_donne_le, statut: c.statut,
+    })),
+    vendables: x.statut === "active" && peutModifier && (ouvertesIci.includes("R3") || ouvertesIci.includes("VENTE"))
+      ? (memeClient ?? [])
+          // Toutes les affaires actives du client ; le moteur vérifie à la création qu'elles sont en R3 ou en Vente.
+          .filter((m) => !m.vente_id)
+          .map((m) => ({ id: m.id, libelle: m.libelle, montantDevisHtCts: m.montant_devis_ht_cts }))
+      : null,
+    estGerant: moi.role === "gerant",
     rdv: (rdv.data ?? []).map((r) => ({ id: r.id, type: r.type, rang: r.rang, debut: r.debut, statut: r.statut, notes: r.notes, avec: prenomDe(r.profil_id) })),
     process: { nom: definition.nom, ...construireProcessVue(definition, lignesEtapes, taches.data ?? [], { aujourdhui, prenomDe }) },
     aValider,
@@ -207,7 +262,11 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
       referents: Object.fromEntries(ROLES_REFERENTS.map((r) => [r, personne(parametre.get(r))])),
       close,
     }),
-    historique: construireHistorique((journal.data ?? []) as JournalLigne[], { definition, prenomDe }),
+    // Les traces de la vente commune sont gardées, pas celles des autres affaires qu'elle regroupe.
+    historique: construireHistorique(
+      ((journal.data ?? []) as (JournalLigne & { ligne_id: string | null })[]).filter((j) => !(j.table_nom === "affaire" && j.ligne_id !== affaireId)),
+      { definition, prenomDe },
+    ),
     concepteursPossibles:
       moi.role === "gerant"
         ? (profils.data ?? [])

@@ -468,7 +468,9 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
     // Vente, échéancier, commandes, planning
     if (vendue) {
       const v = vente(client, magasin, affaires, signature, concepteur);
-      const planningConfirme = passe("PLANNING_LIVRAISON");
+      // Le gérant logistique confirme les dates quelques jours après la vente (EF-61) : seules les ventes
+      // les plus récentes ont encore leur demande de planning en attente.
+      const planningConfirme = passe("PREP_COMMANDE");
       echeances(v, concepteur, {
         acompte_1: passe("ACOMPTE_1") ? ajouterJours(signature, a.entier(0, 2)) : null,
         acompte_2: passe("ACOMPTE_2") ? livraison : null,
@@ -494,9 +496,16 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
         date_pose_confirmee: planningConfirme ? pose : null, poseur: planningConfirme ? "BAJV Agencements" : null,
         statut: planningConfirme ? "confirmee" : "demandee", demande_par: p[concepteur],
         confirme_par: planningConfirme ? p.valentin : null,
-        created_at: at(signature, "18:10"), updated_at: at(planningConfirme ? o.DOSSIER_POSE : signature, "18:10"),
+        created_at: at(signature, "18:10"), updated_at: at(planningConfirme ? o.PREP_COMMANDE : signature, "18:10"),
         created_by: p[concepteur],
       });
+      if (!planningConfirme) {
+        jeu.taches.push({
+          id: a.uuid(), affaire_id: premiere.id!, modele_code: "confirmer_planning", titre: "Confirmer le planning de livraison et de pose",
+          assignee_id: p.valentin, echeance: ajouterJours(signature, 2), statut: "a_faire", origine: "process",
+          created_at: at(signature, "18:10"), updated_at: at(signature, "18:10"), created_by: p[concepteur],
+        });
+      }
     }
 
     // Étapes et tâches : rejeu du moteur de process, validation par validation, aux dates du plan.

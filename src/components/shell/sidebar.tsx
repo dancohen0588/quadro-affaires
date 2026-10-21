@@ -25,8 +25,9 @@ const ICONES: Record<EntreeNavigation["icone"], LucideIcon> = {
   admin: Settings,
 };
 
-/** `badges` : compteur par entrée (tâches du jour pour Ma journée). */
-export function Sidebar({ estGerant, badges = {} }: { estGerant: boolean; badges?: Record<string, number> }) {
+/** `badges` : compteur par entrée (tâches du jour, demandes de planning en attente). */
+export type Badge = { nombre: number; libelle: string };
+export function Sidebar({ estGerant, badges = {} }: { estGerant: boolean; badges?: Record<string, Badge> }) {
   const pathname = usePathname();
   const active = entreeActive(pathname);
   const commun = NAVIGATION.filter((e) => !e.gerantsSeulement);
@@ -65,7 +66,7 @@ export function Sidebar({ estGerant, badges = {} }: { estGerant: boolean; badges
   );
 }
 
-function ItemNavigation({ entree, actif, badge }: { entree: EntreeNavigation; actif: boolean; badge?: number }) {
+function ItemNavigation({ entree, actif, badge }: { entree: EntreeNavigation; actif: boolean; badge?: Badge }) {
   const Icone = ICONES[entree.icone];
   return (
     <li>
@@ -80,9 +81,9 @@ function ItemNavigation({ entree, actif, badge }: { entree: EntreeNavigation; ac
       >
         <Icone aria-hidden className="size-[18px] opacity-90" />
         {entree.libelle}
-        {!!badge && (
+        {!!badge?.nombre && (
           <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-sage-500 px-1.5 text-[12px] font-bold text-teal-900">
-            {badge}<span className="sr-only"> tâches à faire</span>
+            {badge.nombre}<span className="sr-only"> {badge.libelle}</span>
           </span>
         )}
       </Link>
