@@ -86,6 +86,10 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm build
       - run: pnpm e2e
+      - name: Répétition du scénario de démo (section 15.5) sur une base tout juste remise
+        run: |
+          pnpm seed:demo
+          pnpm e2e:demo
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
