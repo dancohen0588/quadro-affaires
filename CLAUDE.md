@@ -121,6 +121,11 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Un conteneur qui défile (overflow-x-auto) et contient des sr-only est en position relative, sinon la page entière déborde.
 - Changer de personnage dans un même test : vider les cookies avant seConnecterEn.
 
+## Choix techniques (session 5.4)
+- Ajout d'un utilisateur (EF-100) : règles src/lib/rules/utilisateurs.ts (domaine, initiales) ; l'AuthAdapter crée le compte (creerCompte, démo : src/adapters/comptes-demo.ts, mot de passe commun), puis public.creer_profil (administrateurs) ; compte annulé (annulerCompte) si le profil est refusé. Jamais d'insertion directe dans profil depuis l'application.
+- Magasins et sociétés (EF-101) : onglet /admin?onglet=magasins, règles src/lib/rules/referentiel.ts (SIREN par clé de Luhn) ; mise à jour directe sous RLS, colonnes modifiables limitées par des droits par colonne (codes et pcloud_root_id exclus).
+- Un SIREN de test est fictif et valide (999123458), jamais celui d'une vraie société.
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.

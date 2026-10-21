@@ -1,7 +1,9 @@
 import { cheminLogique, cleStockage } from "@/lib/pcloud";
 import { DemoClock } from "./clock";
 import {
+  CompteExistantError,
   type AuthAdapter,
+  type NouveauCompte,
   type CalendarSource,
   type FileStore,
   type MailSortant,
@@ -14,10 +16,45 @@ import {
  * elles sont branchées quand les tables existent (session 1.3, J3, J4), sans toucher au code métier.
  */
 
-export const demoAuth: AuthAdapter = {
-  methode: "personnage",
-  cheminConnexion: "/connexion", // page « Choisir un personnage », session 1.2
-};
+/** Comptes de connexion de la démo (Supabase Auth en démo, mémoire dans les tests). */
+export interface PortComptes {
+  creer(compte: NouveauCompte): Promise<{ id: string }>;
+  supprimer(id: string): Promise<void>;
+}
+
+/** Connexion par personnage (page « Choisir un personnage », session 1.2) ; ajout de comptes au mot de passe commun. */
+export class DemoAuth implements AuthAdapter {
+  readonly methode = "personnage" as const;
+  readonly cheminConnexion = "/connexion";
+
+  constructor(private readonly comptes: PortComptes) {}
+
+  creerCompte(compte: NouveauCompte): Promise<{ id: string }> {
+    return this.comptes.creer({ ...compte, email: compte.email.trim().toLowerCase() });
+  }
+
+  annulerCompte(id: string): Promise<void> {
+    return this.comptes.supprimer(id);
+  }
+}
+
+/** Comptes en mémoire (tests) : une adresse ne sert qu'une fois. */
+export function comptesMemoire(): PortComptes & { comptes: Map<string, NouveauCompte> } {
+  const comptes = new Map<string, NouveauCompte>();
+  let n = 0;
+  return {
+    comptes,
+    async creer(compte) {
+      if ([...comptes.values()].some((c) => c.email === compte.email)) throw new CompteExistantError(compte.email);
+      const id = `compte-${++n}`;
+      comptes.set(id, compte);
+      return { id };
+    },
+    async supprimer(id) {
+      comptes.delete(id);
+    },
+  };
+}
 
 /** Boîte d'envoi interne : chaque mail est enregistré, jamais envoyé. */
 export class DemoMailer implements Mailer {

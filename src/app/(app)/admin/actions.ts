@@ -4,11 +4,16 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { adaptateurs } from "@/adapters";
+import { CompteExistantError, NonDisponibleError } from "@/adapters/types";
+import { DOMAINE_DEMO } from "@/lib/demo/personnages";
+import { isDemo } from "@/lib/env";
 import { COLONNES, colonnesManquantes, affaireExistante, cleClient, planifierLigne, type ContexteImport, type PlanImport } from "@/lib/import/affaires";
 import { lireCsv } from "@/lib/import/csv";
 import type { Role } from "@/lib/process/schema";
 import type { LigneStandard } from "@/lib/rules/echeancier";
 import { LISTES, lireListe, seuilsSchema, type CleListe } from "@/lib/rules/parametres";
+import { magasinSchema, societeSchema } from "@/lib/rules/referentiel";
+import { DOMAINE_QUADRO, nouvelUtilisateurSchema } from "@/lib/rules/utilisateurs";
 import { clientUtilisateur } from "@/lib/supabase/server";
 import { exigerGerant } from "@/server/garde";
 import { moteurActif } from "@/server/process";
@@ -102,6 +107,51 @@ const entreeProfil = z.object({
   rubriques: z.array(z.enum(["r4_avis", "dossiers_pose"])),
 });
 
+/**
+ * Ajout d'un utilisateur (EF-100) : l'AuthAdapter prépare son compte de connexion (démo : personnage au mot de passe
+ * commun ; B1 : compte Microsoft 365 rattaché par l'adresse), puis public.creer_profil écrit le profil et ses
+ * magasins. Si la base refuse le profil, le compte tout juste créé est annulé : rien ne reste à moitié.
+ */
+export async function ajouterUtilisateur(brut: unknown): Promise<Resultat> {
+  await exigerAdmin();
+  const demo = isDemo();
+  const lu = nouvelUtilisateurSchema(demo ? [DOMAINE_QUADRO, DOMAINE_DEMO] : [DOMAINE_QUADRO]).safeParse(brut);
+  if (!lu.success) return { ok: false, message: lu.error.issues[0]?.message ?? "Valeurs invalides." };
+  const u = lu.data;
+  const db = await clientUtilisateur();
+  const [{ data: deja }, { data: magasins }] = await Promise.all([
+    db.from("profil").select("id").eq("email", u.email).maybeSingle(),
+    db.from("magasin").select("id, code").in("code", u.magasins),
+  ]);
+  if (deja) return { ok: false, message: "Cette adresse est déjà utilisée par un autre utilisateur." };
+  if ((magasins ?? []).length !== new Set(u.magasins).size) return { ok: false, message: "Magasin inconnu." };
+
+  let compte: { id: string };
+  try {
+    compte = await adaptateurs().auth.creerCompte({ email: u.email, prenom: u.prenom, nom: u.nom });
+  } catch (e) {
+    if (e instanceof CompteExistantError) return { ok: false, message: "Cette adresse a déjà un compte de connexion." };
+    if (e instanceof NonDisponibleError) return { ok: false, message: e.message };
+    console.error("Ajout d'un utilisateur", e);
+    return { ok: false, message: "Le compte de connexion n'a pas pu être créé." };
+  }
+  const { error } = await db.rpc("creer_profil", {
+    p_id: compte.id, p_prenom: u.prenom, p_nom: u.nom, p_email: u.email, p_initiales: u.initiales, p_role: u.role,
+    p_magasins: (magasins ?? []).map((m) => m.id), p_rubriques: u.rubriques,
+  });
+  if (error) {
+    await adaptateurs().auth.annulerCompte(compte.id).catch((e) => console.error("Annulation du compte", e));
+    return { ok: false, message: message(error, "L'utilisateur n'a pas pu être ajouté.") };
+  }
+  revalidatePath("/", "layout");
+  return {
+    ok: true,
+    message: demo
+      ? `Utilisateur ajouté : ${u.prenom} apparaît maintenant dans « Choisir un personnage ».`
+      : `Utilisateur ajouté : ${u.prenom} se connectera avec son compte Microsoft 365.`,
+  };
+}
+
 export async function modifierProfil(brut: z.input<typeof entreeProfil>): Promise<Resultat> {
   await exigerAdmin();
   const lu = entreeProfil.safeParse(brut);
@@ -135,6 +185,32 @@ export async function reactiverProfil(id: string): Promise<Resultat> {
   if (error) return { ok: false, message: "L'utilisateur n'a pas pu être réactivé." };
   revalidatePath("/admin");
   return { ok: true };
+}
+
+// ── Magasins et sociétés (EF-101) ───────────────────────────────────────────────────────────────
+
+export async function modifierMagasin(brut: unknown): Promise<Resultat> {
+  await exigerAdmin();
+  const lu = magasinSchema.safeParse(brut);
+  if (!lu.success) return { ok: false, message: lu.error.issues[0]?.message ?? "Valeurs invalides." };
+  const { id, nom, societeId, adresse, telephone } = lu.data;
+  const db = await clientUtilisateur();
+  const { data, error } = await db.from("magasin").update({ nom, societe_id: societeId, adresse, telephone }).eq("id", id).select("id");
+  if (error || !data?.length) return { ok: false, message: "Le magasin n'a pas pu être modifié." };
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Magasin enregistré." };
+}
+
+export async function modifierSociete(brut: unknown): Promise<Resultat> {
+  await exigerAdmin();
+  const lu = societeSchema.safeParse(brut);
+  if (!lu.success) return { ok: false, message: lu.error.issues[0]?.message ?? "Valeurs invalides." };
+  const { id, nom, siren } = lu.data;
+  const db = await clientUtilisateur();
+  const { data, error } = await db.from("societe").update({ nom, siren }).eq("id", id).select("id");
+  if (error || !data?.length) return { ok: false, message: "La société n'a pas pu être modifiée." };
+  revalidatePath("/admin");
+  return { ok: true, message: "Société enregistrée." };
 }
 
 // ── Paramètres (EF-102) ─────────────────────────────────────────────────────────────────────────

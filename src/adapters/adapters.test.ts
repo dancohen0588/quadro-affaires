@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DemoClock, SystemClock, dateParis } from "./clock";
-import { DOSSIER_VIDE, DemoFileStore, DemoMailer, boiteEnvoiMemoire, stockageMemoire } from "./demo";
+import { DOSSIER_VIDE, DemoAuth, DemoFileStore, DemoMailer, boiteEnvoiMemoire, comptesMemoire, stockageMemoire } from "./demo";
+import { CompteExistantError } from "./types";
 import { creerAdaptateurs } from "./index";
 
 describe("Clock", () => {
@@ -35,6 +36,18 @@ describe("Mailer démo", () => {
     expect(id).toBe("mail-1");
     expect(boite.mails).toHaveLength(1);
     expect(boite.mails[0].type).toBe("planning");
+  });
+});
+
+describe("AuthAdapter démo : comptes des utilisateurs ajoutés (EF-100)", () => {
+  it("crée un compte par adresse (normalisée), refuse un doublon, annule un compte", async () => {
+    const port = comptesMemoire();
+    const auth = new DemoAuth(port);
+    const { id } = await auth.creerCompte({ email: " Nina@Magasin-Quadro.fr", prenom: "Nina", nom: "" });
+    expect(port.comptes.get(id)?.email).toBe("nina@magasin-quadro.fr");
+    await expect(auth.creerCompte({ email: "nina@magasin-quadro.fr", prenom: "Nina", nom: "" })).rejects.toBeInstanceOf(CompteExistantError);
+    await auth.annulerCompte(id);
+    expect(port.comptes.size).toBe(0);
   });
 });
 

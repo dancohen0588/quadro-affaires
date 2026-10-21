@@ -806,6 +806,10 @@ Précisions (session 3.2) :
 
 Précisions (session 5.2) : administration légère livrée en J5 — utilisateurs (lecture, rôle, magasins, rubriques, désactivation avec réassignation des affaires en cours et des tâches ouvertes, réactivation ; un référent doit d'abord être remplacé), paramètres (seuils, listes, gérants référents), version de process en lecture seule. L'invitation passe par la connexion Microsoft 365 (B1) ; l'éditeur de process (EF-103) et le journal (EF-104) attendent B6.
 
+Précisions (session 5.4, complément de J5) :
+- EF-100 ajout d'un utilisateur : prénom, nom, adresse, rôle, magasins, rubriques (transverses). L'adresse est du domaine magasin-quadro.fr (en démo, aussi le domaine fictif des personnages) et unique. L'AuthAdapter prépare le compte de connexion (`creerCompte`), puis `public.creer_profil` (administrateurs) écrit le profil et ses magasins, tout ou rien ; si la base refuse le profil, le compte est annulé. Le profil porte toujours l'adresse de son compte. Un gérant ajouté est administrateur, comme les trois gérants. En démo, la personne apparaît aussitôt dans « Choisir un personnage » (mot de passe commun des personnages) ; `pnpm seed:demo` la retire. En production (B1), le compte est créé sans mot de passe et rattaché à la première connexion Microsoft 365 par l'adresse.
+- EF-101 magasins et sociétés : onglet « Magasins et sociétés » de l'administration ; consultation par les gérants, modification par les administrateurs (magasin : nom, société, adresse, téléphone ; société : nom, SIREN contrôlé par sa clé). Les codes (AIX, VAL, CIO…) ne changent pas : ils nomment les dossiers PCloud et servent à l'import ; le dossier racine PCloud d'un magasin (`pcloud_root_id`) est renseigné au bloc B3. La base le garantit par des droits par colonne.
+
 ---
 
 ## 10. Indicateurs de pilotage
@@ -1152,7 +1156,7 @@ Chaque branchement remplace un adaptateur démo par sa version réelle, derrièr
 
 | Bloc | Adaptateur | Travail | Accès requis |
 | --- | --- | --- | --- |
-| B1 | AuthAdapter → microsoft | Provider Azure dans Supabase Auth, restriction au domaine, rattachement des profils existants par email ; la page des personnages disparaît en production | Administrateur du tenant Microsoft 365 |
+| B1 | AuthAdapter → microsoft | Provider Azure dans Supabase Auth, restriction au domaine, rattachement des profils existants par email (`creerCompte` crée un compte sans mot de passe pour un utilisateur ajouté par l'administration) ; la page des personnages disparaît en production | Administrateur du tenant Microsoft 365 |
 | B2 | Mailer → resend | Envoi réel, la boîte d'envoi reste comme journal | DNS de magasin-quadro.fr |
 | B3 | FileStore → pcloud | OAuth PCloud, copie du vrai NOUVEAU CLIENT, dépôt et renommage, contrôle des documents attendus (section 13.4) | Compte PCloud et accès API, arborescence réelle |
 | B4 | Import Gesteos | Mapping des vrais exports (section 13.2) | Exemples d'exports réels |
