@@ -458,7 +458,7 @@ Une vente a au moins une affaire (`affaire.vente_id`), toutes du même client.
 | at | timestamptz | |
 | affaire_id, vente_id, client_id | uuid | rattachement de la trace (historique d'une fiche, EF-40, et droits de lecture) ; vides pour une suppression |
 
-Alimenté par trigger générique sur les tables métier et le référentiel ; les mises à jour qui ne touchent que des colonnes techniques (`updated_at`, `derniere_activite_at`, `etape_courante_code`) ne sont pas journalisées. Lecture seule : chacun lit l'historique de ce qu'il voit, les gérants tout. Table en ajout seul, sans `updated_at`.
+Alimenté par trigger générique sur les tables métier et le référentiel ; les mises à jour qui ne touchent que des colonnes techniques (`updated_at`, `derniere_activite_at`, `etape_courante_code`) ne sont pas journalisées. Lecture seule : chacun lit l'historique de ce qu'il voit, les gérants tout. Table en ajout seul, sans `updated_at`. La trace d'une insertion est datée du `created_at` de la ligne (reprise d'historique), celle d'une mise à jour de l'heure courante.
 
 #### `parametre`
 | Champ | Type | Règle |
@@ -646,7 +646,7 @@ Le moteur raisonne donc toujours sur l'ensemble des `etape_instance` ouvertes de
 | RG-06 | Une issue `end` ou `perdue` exige un motif choisi dans `motifs_non_vente`. |
 | RG-07 | Une issue qui demande une date (R3.n, relance convenue) crée le RDV ou la tâche de relance à cette date. |
 | RG-08 | Une vente ne peut regrouper que des affaires du même client, toutes au statut `active`. À la création de la vente, ces affaires passent `gagnee` et ouvrent ACOMPTE_1. |
-| RG-09 | `derniere_activite_at` est mis à jour à chaque écriture sur l'affaire, ses étapes, tâches, RDV, échéances et commandes. |
+| RG-09 | `derniere_activite_at` est mis à jour à chaque écriture sur l'affaire, ses étapes, tâches, RDV, échéances et commandes. Une ligne insérée avec une date passée (reprise d'historique, seed de démo) date l'activité de sa création ; la dernière activité ne recule jamais. |
 
 ### 8.3 Règlements
 
@@ -1079,6 +1079,8 @@ Chaque séquence répond à une réponse de Jean du 12 octobre. Dérouler avec l
 | 10 | Jean | Administration : seuils modifiables, utilisateurs, version de process | Les trois gérants administrent |
 
 Fin de démo : présenter la liste des accès à obtenir (section 17) et les points ouverts (section 18) pour les trancher sur place.
+
+Données préparées par `pnpm seed:demo` (`src/lib/demo/generer.ts`, liste `CAS_DEMO`) : le jeu est déterministe et daté par rapport au jour du seed, à lancer la veille de la présentation. Il contient environ 6 mois d'historique (≈ 270 ventes, affaires perdues avec motif, contacts CNQ), 76 affaires actives sur les 6 phases et les cas de la session 1.4 : 3 R3.n en cours, 2 ARC et 1 BPA en retard, 2 acomptes 1 non reçus, 1 acompte 2 en retard et 1 autre qui le devient après « +3 jours » (séquence 8), 2 retards commerce, 1 SAV, 1 client professionnel, des clients qui reviennent, des affaires dont Jean est concepteur, une branche autres fournisseurs en parallèle du BPA, une vente à deux affaires, et la journée de Manon (R2 aujourd'hui, R3 de la semaine, tâches du jour et en retard, rappel convenu).
 
 ### 15.6 Après la démo : brancher les vrais outils
 

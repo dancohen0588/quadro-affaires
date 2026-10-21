@@ -1,23 +1,22 @@
 /**
- * pnpm seed:demo — remet la base de démo dans l'état de départ (docs/conception.md, section 15.5).
+ * pnpm seed:demo — remet la base de démo dans l'état de départ du scénario (docs/conception.md, section 15.5).
  *
- * Sessions 1.2 et 1.3 : référentiel (sociétés, magasins), comptes des 11 personnages, profils, rattachements,
- * process 2026 v1, gérants référents, horloge remise à l'heure réelle. Les affaires fictives arrivent en session 1.4.
+ *   1. vide les données métier (affaires, ventes, clients, tâches…) et le journal ;
+ *   2. recrée le référentiel, les 11 personnages, le process 2026 v1 et les gérants référents ;
+ *   3. remet l'horloge de démo à l'heure réelle ;
+ *   4. charge le jeu de démo déterministe (src/lib/demo/generer.ts), daté par rapport à aujourd'hui.
  *
  * Sécurités : refuse de tourner si APP_MODE n'est pas « demo » ; ne supprime que les comptes du domaine
  * de démo ; travaille avec la clé secrète (contourne la RLS), jamais exposée au navigateur.
+ * Ne jamais le lancer pendant une présentation (CLAUDE.md).
  */
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { dateParis } from "../src/adapters/clock";
 import type { Database } from "../src/lib/db/types";
+import { genererJeuDemo } from "../src/lib/demo/generer";
+import { DOMAINE_DEMO, MAGASINS, PERSONNAGES, SOCIETES, emailPersonnage } from "../src/lib/demo/personnages";
 import { chargerProcess } from "../src/lib/process/valider";
-import {
-  DOMAINE_DEMO,
-  MAGASINS,
-  PERSONNAGES,
-  SOCIETES,
-  emailPersonnage,
-} from "../src/lib/demo/personnages";
 
 // Les variables déjà présentes dans l'environnement priment (CI, base locale de test) :
 // .env.local n'est lu que si aucune URL Supabase n'est fournie.
@@ -35,7 +34,11 @@ function exiger(nom: string): string {
   return v;
 }
 
+type Tables = Database["public"]["Tables"];
+type NomTable = keyof Tables;
+
 async function main() {
+  const debut = Date.now();
   if (process.env.APP_MODE !== "demo") {
     throw new Error("seed:demo refuse de tourner hors mode démo (APP_MODE doit valoir « demo »).");
   }
@@ -57,14 +60,31 @@ async function main() {
     if (r.data === null || r.data === undefined) throw new Error(`${etape} : réponse vide`);
     return r.data as T;
   };
-
   const idDe = (index: Map<string, string>, code: string, quoi: string): string => {
     const id = index.get(code);
     if (!id) throw new Error(`${quoi} introuvable : ${code}`);
     return id;
   };
+  /** Supprime toutes les lignes d'une table (le filtre est exigé par l'API). */
+  const vider = async (table: NomTable) => ok(await db.from(table).delete().not("id", "is", null), `Vidage de ${table}`);
+  /** Insère par lots de 500 lignes. */
+  const inserer = async <N extends NomTable>(table: N, lignes: Tables[N]["Insert"][]) => {
+    for (let i = 0; i < lignes.length; i += 500) {
+      // Le typage générique de supabase-js ne suit pas une table passée en paramètre.
+      // defaultToNull: false — une colonne absente d'une ligne du lot prend sa valeur par défaut, pas NULL.
+      ok(await db.from(table).insert(lignes.slice(i, i + 500) as never, { defaultToNull: false }), `Insertion dans ${table}`);
+    }
+  };
 
-  // 1. Supprimer les comptes de démo existants (les profils et rattachements suivent en cascade).
+  // 1. Données métier, de la plus dépendante à la moins dépendante, puis le journal.
+  for (const table of [
+    "tache", "document", "commande_fournisseur", "planning", "echeance", "rdv", "etape_instance", "mail_sortant",
+    "affaire", "vente", "client",
+  ] as const) {
+    await vider(table);
+  }
+
+  // 2a. Comptes de démo existants (les profils et rattachements suivent en cascade).
   let supprimes = 0;
   for (let page = 1; ; page++) {
     const { users } = lire<{ users: { id: string; email?: string }[] }>(await db.auth.admin.listUsers({ page, perPage: 200 }), "Liste des comptes");
@@ -75,12 +95,10 @@ async function main() {
     }
     if (users.length < 200) break;
   }
+  await vider("journal");
 
-  // 2. Référentiel : sociétés et magasins (mis à jour s'ils existent).
-  ok(
-    await db.from("societe").upsert(SOCIETES.map((s) => ({ code: s.code, nom: s.nom })), { onConflict: "code" }),
-    "Sociétés",
-  );
+  // 2b. Référentiel : sociétés et magasins (mis à jour s'ils existent).
+  ok(await db.from("societe").upsert(SOCIETES.map((s) => ({ code: s.code, nom: s.nom })), { onConflict: "code" }), "Sociétés");
   const societes = lire<{ id: string; code: string }[]>(await db.from("societe").select("id, code"), "Lecture des sociétés");
   const idSociete = new Map(societes.map((s) => [s.code, s.id]));
   ok(
@@ -93,7 +111,7 @@ async function main() {
   const magasins = lire<{ id: string; code: string }[]>(await db.from("magasin").select("id, code"), "Lecture des magasins");
   const idMagasin = new Map(magasins.map((m) => [m.code, m.id]));
 
-  // 3. Comptes, profils et rattachements des personnages.
+  // 2c. Comptes, profils et rattachements des personnages.
   const idProfil = new Map<string, string>();
   for (const p of PERSONNAGES) {
     const { user } = lire<{ user: { id: string } | null }>(
@@ -109,14 +127,8 @@ async function main() {
     idProfil.set(p.cle, user.id);
     ok(
       await db.from("profil").insert({
-        id: user.id,
-        prenom: p.prenom,
-        nom: p.nom,
-        email: emailPersonnage(p),
-        role: p.role,
-        est_admin: p.estAdmin,
-        rubriques: p.rubriques,
-        initiales: p.initiales,
+        id: user.id, prenom: p.prenom, nom: p.nom, email: emailPersonnage(p), role: p.role,
+        est_admin: p.estAdmin, rubriques: p.rubriques, initiales: p.initiales,
       }),
       `Profil de ${p.prenom}`,
     );
@@ -126,12 +138,9 @@ async function main() {
     );
   }
 
-  // 4. Modèle de process 2026 v1 (section 7), validé avant publication ; seule version active.
+  // 2d. Process 2026 v1 (section 7), validé avant publication ; seule version active.
   const definition = chargerProcess(JSON.parse(readFileSync("process/2026-v1.json", "utf8")));
-  ok(
-    await db.from("process_version").update({ active: false }).neq("nom", definition.nom),
-    "Désactivation des autres versions",
-  );
+  ok(await db.from("process_version").update({ active: false }).neq("nom", definition.nom), "Désactivation des autres versions");
   ok(
     await db.from("process_version").upsert(
       { nom: definition.nom, definition, active: true, publiee_le: new Date().toISOString(), publiee_par: idProfil.get("jean") },
@@ -139,19 +148,46 @@ async function main() {
     ),
     "Process 2026 v1",
   );
+  const [{ id: processVersionId }] = lire<{ id: string }[]>(
+    await db.from("process_version").select("id").eq("nom", definition.nom),
+    "Lecture du process",
+  );
 
-  // 5. Gérants référents et horloge remise à l'heure réelle.
+  // 2e. Gérants référents ; 3. horloge remise à l'heure réelle.
   for (const p of PERSONNAGES.filter((x) => x.referent)) {
-    ok(
-      await db.from("parametre").update({ valeur: idProfil.get(p.cle) }).eq("cle", p.referent!),
-      `Référent ${p.referent}`,
-    );
+    ok(await db.from("parametre").update({ valeur: idProfil.get(p.cle) }).eq("cle", p.referent!), `Référent ${p.referent}`);
   }
   ok(await db.from("parametre").update({ valeur: null }).eq("cle", "horloge_demo"), "Horloge de démo");
 
+  // 4. Jeu de démo, daté par rapport à aujourd'hui (Europe/Paris).
+  const aujourdhui = dateParis(new Date());
+  const jeu = genererJeuDemo({
+    aujourdhui,
+    definition,
+    processVersionId,
+    profils: Object.fromEntries(idProfil),
+    magasins: {
+      AIX: idDe(idMagasin, "AIX", "Magasin"),
+      VAL: idDe(idMagasin, "VAL", "Magasin"),
+      CIO: idDe(idMagasin, "CIO", "Magasin"),
+    },
+  });
+  await inserer("client", jeu.clients);
+  await inserer("vente", jeu.ventes);
+  await inserer("affaire", jeu.affaires);
+  await inserer("echeance", jeu.echeances);
+  await inserer("planning", jeu.plannings);
+  await inserer("rdv", jeu.rdv);
+  await inserer("etape_instance", jeu.etapes);
+  await inserer("tache", jeu.taches);
+  await inserer("commande_fournisseur", jeu.commandes);
+
+  const actives = jeu.affaires.filter((x) => x.statut === "active" || x.statut === "gagnee").length;
   console.log(
-    `Seed de démo terminé : ${supprimes} ancien(s) compte(s) supprimé(s), ${SOCIETES.length} sociétés, ` +
-      `${MAGASINS.length} magasins, ${PERSONNAGES.length} personnages, process « ${definition.nom} » actif.`,
+    `Seed de démo terminé en ${Math.round((Date.now() - debut) / 1000)} s (jour de référence : ${aujourdhui}).\n` +
+      `  ${supprimes} ancien(s) compte(s) remplacé(s) ; ${PERSONNAGES.length} personnages ; process « ${definition.nom} » actif.\n` +
+      `  ${jeu.clients.length} clients, ${jeu.affaires.length} affaires dont ${actives} actives, ${jeu.ventes.length} ventes, ` +
+      `${jeu.rdv.length} RDV, ${jeu.taches.length} tâches, ${jeu.commandes.length} commandes.`,
   );
 }
 

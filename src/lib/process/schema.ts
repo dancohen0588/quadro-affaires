@@ -14,6 +14,7 @@ import { z } from "zod";
 
 export const ROLES = ["concepteur", "gerant_bpa", "gerant_logistique", "gerant_finance", "responsable_r4"] as const;
 export const roleSchema = z.enum(ROLES);
+export type Role = z.infer<typeof roleSchema>;
 
 export const PHASES = ["accueil", "conception", "vente", "commande", "livraison_pose", "cloture"] as const;
 export const codePhaseSchema = z.enum(PHASES);
