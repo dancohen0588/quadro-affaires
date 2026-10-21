@@ -578,7 +578,173 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            "alertes": {
+                  Row: {
+                    "affaire_id": string | null,"concepteur_id": string | null,"depuis": string | null,"detail": string | null,"echeance_id": string | null,"gravite": number | null,"magasin_id": string | null,"montant_cts": number | null,"regle": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                },"kpi_delai_r1_vente": {
+                  Row: {
+                    "concepteur_id": string | null,"magasin_id": string | null,"nb_ventes": number | null,"periode": string | null,"total_jours": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "vente_magasin_id_fkey"
+      columns: ["magasin_id"]
+isOneToOne: false
+      referencedRelation: "magasin"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"kpi_en_cours": {
+                  Row: {
+                    "concepteur_id": string | null,"magasin_id": string | null,"nb_affaires": number | null,"nb_inactives": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "affaire_concepteur_id_fkey"
+      columns: ["concepteur_id"]
+isOneToOne: false
+      referencedRelation: "profil"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "affaire_magasin_id_fkey"
+      columns: ["magasin_id"]
+isOneToOne: false
+      referencedRelation: "magasin"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"kpi_flux_entrant": {
+                  Row: {
+                    "concepteur_id": string | null,"magasin_id": string | null,"nb_clients": number | null,"nb_cnq": number | null,"periode": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "client_magasin_id_fkey"
+      columns: ["magasin_id"]
+isOneToOne: false
+      referencedRelation: "magasin"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"kpi_motifs": {
+                  Row: {
+                    "concepteur_id": string | null,"magasin_id": string | null,"motif": string | null,"nb": number | null,"periode": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "affaire_concepteur_id_fkey"
+      columns: ["concepteur_id"]
+isOneToOne: false
+      referencedRelation: "profil"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "affaire_magasin_id_fkey"
+      columns: ["magasin_id"]
+isOneToOne: false
+      referencedRelation: "magasin"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"kpi_periodes": {
+                  Row: {
+                    "code": string | null,"debut": string | null,"fin": string | null,"libelle": string | null,"ordre": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                },"kpi_potentiel": {
+                  Row: {
+                    "concepteur_id": string | null,"magasin_id": string | null,"nb_affaires": number | null,"nb_chiffrees": number | null,"potentiel_ht_cts": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "affaire_concepteur_id_fkey"
+      columns: ["concepteur_id"]
+isOneToOne: false
+      referencedRelation: "profil"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "affaire_magasin_id_fkey"
+      columns: ["magasin_id"]
+isOneToOne: false
+      referencedRelation: "magasin"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"kpi_rdv": {
+                  Row: {
+                    "concepteur_id": string | null,"magasin_id": string | null,"nb": number | null,"periode": string | null,"type": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "rdv_profil_id_fkey"
+      columns: ["concepteur_id"]
+isOneToOne: false
+      referencedRelation: "profil"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"kpi_reglements": {
+                  Row: {
+                    "attendu_30j_cts": number | null,"concepteur_id": string | null,"magasin_id": string | null,"nb_attendus_30j": number | null,"nb_retard": number | null,"retard_cts": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "vente_magasin_id_fkey"
+      columns: ["magasin_id"]
+isOneToOne: false
+      referencedRelation: "magasin"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"kpi_transformation": {
+                  Row: {
+                    "concepteur_id": string | null,"magasin_id": string | null,"nb_r3": number | null,"nb_vendues": number | null,"periode": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "affaire_concepteur_id_fkey"
+      columns: ["concepteur_id"]
+isOneToOne: false
+      referencedRelation: "profil"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "affaire_magasin_id_fkey"
+      columns: ["magasin_id"]
+isOneToOne: false
+      referencedRelation: "magasin"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"kpi_ventes": {
+                  Row: {
+                    "ca_ht_cts": number | null,"ca_ttc_cts": number | null,"concepteur_id": string | null,"magasin_id": string | null,"nb_ventes": number | null,"periode": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "vente_magasin_id_fkey"
+      columns: ["magasin_id"]
+isOneToOne: false
+      referencedRelation: "magasin"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
           }
           Functions: {
             "appliquer_effets":

@@ -83,6 +83,13 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Jamais d'import de constante ou de fonction depuis un module « use client » dans un composant serveur (référence client, pas la valeur) : les partager dans un module neutre (ex. src/components/vente/libelles.ts).
 - Pas de composant défini dans le rendu d'un autre (l'input perd le focus) : utiliser une fonction de rendu.
 
+## Choix techniques (session 4.1)
+- Indicateurs : une vue SQL par KPI (public.kpi_*) et public.alertes (RG-20 à RG-29), en security_invoker ; définitions dans docs/indicateurs.md, à mettre à jour avant toute vue.
+- Périodes : public.kpi_periodes, calculées depuis prive.app_today() ; seuils lus par prive.seuil(cle) ; jours ouvrés en SQL par prive.jours_ouvres_ecoules (même règle que calendrier.ts, testée en pgTAP).
+- Les vues restent la seule définition : le TypeScript filtre et additionne (src/lib/indicateurs), sans recalculer un indicateur ni une alerte (seule exception : les jours sans mouvement affichés, même calcul que Ma journée).
+- Lecture : src/server/indicateurs.ts (chargerPipeline, chargerPilotage, chargerPointDuMardi) ; /point-du-mardi vit hors du groupe (app) pour le grand format.
+- Tests pgTAP d'indicateurs : fixer aujourd'hui par horloge_demo = date visée − now() (now() est figé dans la transaction).
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.

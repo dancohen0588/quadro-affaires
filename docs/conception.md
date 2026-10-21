@@ -826,6 +826,14 @@ Chaque indicateur est une vue SQL testée, documentée dans `docs/indicateurs.md
 
 Tous les indicateurs se déclinent par magasin et par concepteur (D19).
 
+Précisions (session 4.1) :
+- définitions exactes, vues et colonnes dans `docs/indicateurs.md` ; une vue `public.kpi_*` par indicateur et `public.alertes` pour RG-20 à RG-29, en `security_invoker` (la RLS s'applique : une conceptrice ne voit que ses magasins) ;
+- périodes (`kpi_periodes`) : semaine, semaine dernière, mois, mois dernier, trimestre, année, 12 derniers mois, toutes closes sur `app_today()` ; le Pilotage s'ouvre sur « ce mois » ;
+- RG-20 suit D17 : R1 fait depuis plus de 14 jours sans R3 fait ni vente ; RG-27 porte sur les affaires en cours (actives ou gagnées), comme « Ma journée » ;
+- le concepteur d'une vente est celui de sa première affaire ; une alerte de règlement est rattachée à cette affaire ;
+- KPI-04 n'est pas pondéré (point ouvert) ; KPI-10 date une perte par la fin de l'étape close avec motif ;
+- les traitements de nuit (session 4.2) partiront de la vue `alertes` pour créer tâches et digests, sans redéfinir les règles.
+
 ---
 
 ## 11. Notifications et digests

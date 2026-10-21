@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { centimesDepuis, champDepuisSemaine, dateCourte, depuis, euros, heure, instantParis, jourDe, semaineCourte, semaineDepuisChamp } from "./format";
+import { centimesDepuis, champDepuisSemaine, dateCourte, depuis, euros, heure, instantParis, jourDe, nomCourtMagasin, semaineCourte, semaineDepuisChamp } from "./format";
 
 const nb = (s: string) => s.replace(/ /g, " ");
 
 describe("formats d'affichage", () => {
+  it("raccourcit les noms de magasin", () => {
+    expect(["Aix La Pioline", "Marseille La Valentine", "La Ciotat"].map(nomCourtMagasin)).toEqual(["Aix", "La Valentine", "La Ciotat"]);
+  });
+
   it("écrit les montants en euros à partir des centimes", () => {
     expect(nb(euros(372000))).toBe("3 720,00 €");
     expect(nb(euros(1240000, true))).toBe("12 400 €");

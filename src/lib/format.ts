@@ -82,3 +82,8 @@ export function semaineDepuisChamp(valeur: string): string | null {
 export function champDepuisSemaine(semaine: string | null): string {
   return semaine ? semaine.replace("-S", "-W") : "";
 }
+
+/** Nom court d'un magasin pour les tableaux serrés : « Marseille La Valentine » → « La Valentine », « Aix La Pioline » → « Aix ». */
+export function nomCourtMagasin(nom: string): string {
+  return nom.replace(/^Marseille /, "").replace(/ La Pioline$/, "");
+}
