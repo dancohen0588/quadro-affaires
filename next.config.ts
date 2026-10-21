@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Dépôt de documents dans le PCloud simulé (J5) : 4 Mo par fichier, sous la limite de 4,5 Mo des fonctions Vercel.
   experimental: { serverActions: { bodySizeLimit: "4.2mb" } },
+  // Fichier d'exemple de l'import de reprise, lu à l'exécution par la route /admin/exemple.csv.
+  outputFileTracingIncludes: { "/admin/exemple.csv": ["./docs/import/affaires-exemple.csv"] },
   turbopack: {
     rules: {
       "*.css": {

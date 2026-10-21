@@ -107,6 +107,13 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Débit AGEM : lecture .docx sans dépendance (src/lib/debit/docx.ts, node:zlib), extraction src/lib/debit/agem.ts ; valeurs proposées puis validerDebit → enregistrerCommande. KPI-11 : src/lib/rules/marge.ts (fiche) et vue kpi_marge (Pilotage).
 - Jeu de démo : un réglage peut imposer un concepteur sans changer le tirage (remplace) ; le cas debit_agem_exemple correspond au débit anonymisé.
 
+## Choix techniques (session 5.2)
+- Import de reprise (13.1) : CSV lu par src/lib/import/csv.ts, ligne validée et planifiée par planifierLigne (src/lib/import/affaires.ts, rejeu du moteur comme le jeu de démo), écrite tout ou rien par public.importer_affaire (gérants) ; mode essai sans écriture, rapport de rejets ; une affaire déjà présente (magasin, contremarque, projet) n'est jamais recréée.
+- prive.inserer_ligne n'insère que les colonnes fournies (les autres gardent leur défaut) ; elle n'est appelable que par importer_affaire.
+- Administration (/admin, onglets) : utilisateurs via public.modifier_profil et public.desactiver_profil (administrateurs, réassignation tout ou rien, référent protégé) ; paramètres validés par src/lib/rules/parametres.ts ; process en lecture seule (src/lib/process/lecture.ts).
+- Un fichier lu à l'exécution hors de src (docs/import/affaires-exemple.csv) est déclaré dans outputFileTracingIncludes.
+- e2e : zy-admin-import.spec.ts tourne avant zz-horloge (il importe et réassigne).
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.
