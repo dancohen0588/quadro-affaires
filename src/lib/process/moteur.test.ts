@@ -261,3 +261,27 @@ describe("validation d'une étape (RG-05)", () => {
     expect(r.effets).toContainEqual(expect.objectContaining({ type: "creer_tache", titre: "Point technique avec Benjamin ou Valentin", echeance: "2026-10-30" }));
   });
 });
+
+describe("clôture d'une affaire avant la vente (EF-25)", () => {
+  it("saute les étapes ouvertes, annule leurs tâches, enregistre le motif et ouvre l'archivage", () => {
+    const etat = jusqua("R2");
+    const r = ok(moteur.clore(etat, { ...moment(), statut: "abandonnee", motif: "projet abandonné" }));
+    expect(r.effets.slice(0, 3)).toEqual([
+      { type: "sauter_etape", etape: "R2", iteration: 1, motif: "projet abandonné", quand: "2026-10-21T10:00:00+02:00", par: "manon" },
+      { type: "annuler_taches", etape: "R2", iteration: 1 },
+      { type: "statut_affaire", statut: "abandonnee", motif: "projet abandonné" },
+    ]);
+    expect(r.etat.statut).toBe("abandonnee");
+    expect(ouvertes(r.etat)).toEqual(["ARCHIVAGE"]);
+    expect(r.etat.etapes.find((e) => e.code === "R2")).toMatchObject({ statut: "sautee", motif: "projet abandonné" });
+    expect(r.etat.tachesOuvertes.every((t) => t.etape === "ARCHIVAGE")).toBe(true);
+  });
+
+  it("refuse sans motif, avec un motif inconnu, après la vente ou sur une affaire déjà close", () => {
+    const etat = jusqua("R3");
+    expect(moteur.clore(etat, { ...moment(), statut: "perdue", motif: "" })).toMatchObject({ ok: false, erreur: "motif_obligatoire" });
+    expect(moteur.clore(etat, { ...moment(), statut: "perdue", motif: "météo" })).toMatchObject({ ok: false, erreur: "motif_inconnu" });
+    expect(moteur.clore(jusqua("ACOMPTE_1"), { ...moment(), statut: "perdue", motif: "prix" })).toMatchObject({ ok: false, erreur: "cloture_impossible" });
+    expect(moteur.clore({ ...etat, statut: "perdue" }, { ...moment(), statut: "perdue", motif: "prix" })).toMatchObject({ ok: false, erreur: "affaire_close" });
+  });
+});

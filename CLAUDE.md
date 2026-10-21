@@ -67,6 +67,15 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Fenêtres modales : src/components/ui/dialog.tsx (Base UI). Champs de formulaire natifs (select, radio, case à cocher) stylés à la charte.
 - Tests e2e de la fiche : mode série, ils supposent une base tout juste remise par pnpm seed:demo.
 
+## Choix techniques (session 3.1)
+- Contacts et clients : actions dans src/app/(app)/clients/actions.ts ; fiche client src/app/(app)/clients/[id] ; formulaires src/components/clients.
+- Créer des affaires = public.creer_affaires (insertion + démarrage du moteur, tout ou rien) ; jamais d'insertion directe dans affaire depuis l'application.
+- Clients d'autres magasins : public.rechercher_clients et public.identite_client (gérants et conceptrices) ; la visibilité normale reste client_visible.
+- Ma journée : données par chargerJournee (src/server/journee.ts), vue pure src/lib/affaire/journee.ts, règles de charge src/lib/rules/charge.ts (RG-30 à RG-32).
+- Listes et seuils des formulaires : chargerReferentiel (src/server/referentiel.ts).
+- Un aria-labelledby ne contient jamais d'espace (identifiants techniques, pas de titres).
+- Playwright : un seul worker, les parcours partagent la base de démo et la modifient.
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.

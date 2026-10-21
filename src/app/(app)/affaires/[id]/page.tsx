@@ -5,6 +5,8 @@ import { BlocRdv } from "@/components/affaire/bloc-rdv";
 import { DocumentsAttendus, Historique, Intervenants } from "@/components/affaire/blocs-lateraux";
 import { Etat, PastillePhase } from "@/components/affaire/pastille-phase";
 import { Reassigner } from "@/components/affaire/reassigner";
+import { CloreAffaire } from "@/components/affaire/clore-affaire";
+import Link from "next/link";
 import { TimelineProcess } from "@/components/affaire/timeline-process";
 import { ValiderEtape } from "@/components/affaire/valider-etape";
 import { dateCourte, depuis, euros, semaineCourte } from "@/lib/format";
@@ -35,7 +37,7 @@ function Synthese({ f, annee }: { f: Fiche; annee: number }) {
     <section aria-label="Synthèse" className="rounded-xl bg-card px-5 py-4 ring-1 ring-foreground/10">
       <div className="grid gap-x-10 gap-y-2 text-[15px] 2xl:grid-cols-2">
         <dl className="grid grid-cols-[8.5rem_1fr] gap-x-3 gap-y-2">
-          <Ligne libelle="Client">{f.client.nom}{f.client.telephone && <span className="whitespace-nowrap"> · {f.client.telephone}</span>}</Ligne>
+          <Ligne libelle="Client"><Link href={`/clients/${f.client.id}`} className="underline-offset-2 hover:underline">{f.client.nom}</Link>{f.client.telephone && <span className="whitespace-nowrap"> · {f.client.telephone}</span>}</Ligne>
           <Ligne libelle="Adresse">{f.client.adresse ?? "—"}</Ligne>
           <Ligne libelle={f.vente ? "Montant BDC" : "Montant devis"}>
             {f.vente
@@ -100,6 +102,7 @@ export default async function FicheAffaire({ params }: PageProps<"/affaires/[id]
               {f.etapeCourante.phaseNumero} {f.etapeCourante.phaseNom.split(" & ")[0]} · {f.etapeCourante.titre}
             </PastillePhase>
           ) : null}
+          {f.statut === "active" && f.peutModifier && <CloreAffaire affaireId={f.id} motifs={f.motifs} />}
           {f.concepteursPossibles && <Reassigner affaireId={f.id} actuel={f.concepteur.id} possibles={f.concepteursPossibles} />}
           <span
             role="link"

@@ -46,6 +46,8 @@ describe("historique lisible (EF-40)", () => {
     expect(texte(ligne("tache", "update", { statut: "a_faire" }, { statut: "faite", titre: "Vérifier le chiffrage" }))).toBe("Tâche faite : Vérifier le chiffrage");
     expect(texte(ligne("tache", "insert", null, { statut: "a_faire", origine: "relance", titre: "Relancer le client", echeance: "2026-10-28" }))).toBe("Relance prévue le 28 oct. : Relancer le client");
     expect(texte(ligne("tache", "insert", null, { statut: "a_faire", origine: "process", titre: "x" }))).toBeNull();
+    expect(texte(ligne("tache", "update", { statut: "a_faire", echeance: "2026-10-20" }, { statut: "a_faire", echeance: "2026-10-24", titre: "Relancer AGEM" }))).toBe("Tâche reportée au 24 oct. : Relancer AGEM");
+    expect(texte(ligne("tache", "update", { statut: "a_faire", echeance: null }, { statut: "a_faire", echeance: "2026-10-24", titre: "x" }))).toBeNull();
     expect(texte(ligne("affaire", "insert", null, { statut: "active" }))).toBe("Affaire créée");
     expect(texte(ligne("affaire", "update", { statut: "active" }, { statut: "perdue", motif_perte: "prix" }))).toBe("Affaire perdue (prix)");
     expect(texte(ligne("affaire", "update", { statut: "active" }, { statut: "gagnee" }))).toBe("Affaire gagnée");

@@ -12,7 +12,8 @@ const lignes: LignesAffaire = {
     etape("SOLDE", "en_cours", "2026-10-20T10:00:00+02:00"),
     etape("POSE", "faite", "2026-10-10T10:00:00+02:00", { issue_code: "ok", fin_at: "2026-10-19T22:30:00Z", phase_code: "livraison_pose" }),
     etape("R4", "en_cours", "2026-10-20T10:00:00+02:00"),
-    etape("BL", "sautee", "2026-09-01T10:00:00+02:00"),
+    etape("BL", "a_venir", "2026-09-01T10:00:00+02:00"),
+    etape("R2", "sautee", "2026-08-01T10:00:00+02:00", { phase_code: "conception" }),
   ],
   taches: [{ etape_code: "SOLDE", iteration: 1, titre: "Vérifier le solde", optionnelle: false }],
   acompte1Recu: true,
@@ -26,9 +27,9 @@ const lignes: LignesAffaire = {
 };
 
 describe("état du moteur à partir de la base", () => {
-  it("garde les étapes en cours et faites, dans l'ordre de leur ouverture", () => {
+  it("garde les étapes en cours, faites et sautées, dans l'ordre de leur ouverture", () => {
     const etat = construireEtat(lignes);
-    expect(etat.etapes.map((e) => [e.code, e.statut])).toEqual([["POSE", "faite"], ["SOLDE", "en_cours"], ["R4", "en_cours"]]);
+    expect(etat.etapes.map((e) => [e.code, e.statut])).toEqual([["R2", "sautee"], ["POSE", "faite"], ["SOLDE", "en_cours"], ["R4", "en_cours"]]);
     expect(etat).toMatchObject({ statut: "gagnee", acompte1Recu: true, avisObtenu: false });
     expect(etat.tachesOuvertes).toEqual([{ etape: "SOLDE", iteration: 1, titre: "Vérifier le solde", optionnelle: false }]);
     expect(construireEtat({ ...lignes, affaire: { statut: "gagnee", avis_google_obtenu_le: "2026-10-01" } }).avisObtenu).toBe(true);

@@ -25,7 +25,8 @@ const ICONES: Record<EntreeNavigation["icone"], LucideIcon> = {
   admin: Settings,
 };
 
-export function Sidebar({ estGerant }: { estGerant: boolean }) {
+/** `badges` : compteur par entrée (tâches du jour pour Ma journée). */
+export function Sidebar({ estGerant, badges = {} }: { estGerant: boolean; badges?: Record<string, number> }) {
   const pathname = usePathname();
   const active = entreeActive(pathname);
   const commun = NAVIGATION.filter((e) => !e.gerantsSeulement);
@@ -44,7 +45,7 @@ export function Sidebar({ estGerant }: { estGerant: boolean }) {
       <nav aria-label="Navigation principale" className="flex flex-1 flex-col gap-6 px-3">
         <ul className="flex flex-col gap-1">
           {commun.map((e) => (
-            <ItemNavigation key={e.href} entree={e} actif={active?.href === e.href} />
+            <ItemNavigation key={e.href} entree={e} actif={active?.href === e.href} badge={badges[e.href]} />
           ))}
         </ul>
         {estGerant && (
@@ -54,7 +55,7 @@ export function Sidebar({ estGerant }: { estGerant: boolean }) {
             </p>
             <ul className="flex flex-col gap-1">
               {gerants.map((e) => (
-                <ItemNavigation key={e.href} entree={e} actif={active?.href === e.href} />
+                <ItemNavigation key={e.href} entree={e} actif={active?.href === e.href} badge={badges[e.href]} />
               ))}
             </ul>
           </div>
@@ -64,7 +65,7 @@ export function Sidebar({ estGerant }: { estGerant: boolean }) {
   );
 }
 
-function ItemNavigation({ entree, actif }: { entree: EntreeNavigation; actif: boolean }) {
+function ItemNavigation({ entree, actif, badge }: { entree: EntreeNavigation; actif: boolean; badge?: number }) {
   const Icone = ICONES[entree.icone];
   return (
     <li>
@@ -79,6 +80,11 @@ function ItemNavigation({ entree, actif }: { entree: EntreeNavigation; actif: bo
       >
         <Icone aria-hidden className="size-[18px] opacity-90" />
         {entree.libelle}
+        {!!badge && (
+          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-sage-500 px-1.5 text-[12px] font-bold text-teal-900">
+            {badge}<span className="sr-only"> tâches à faire</span>
+          </span>
+        )}
       </Link>
     </li>
   );

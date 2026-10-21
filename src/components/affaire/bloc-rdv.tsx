@@ -21,6 +21,7 @@ export function BlocRdv({ affaireId, rdv, aujourdhui, modifiable }: { affaireId:
   const id = useId();
   const [ajout, setAjout] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [avertissements, setAvertissements] = useState<string[]>([]);
   const [enCours, demarrer] = useTransition();
   const annee = Number(aujourdhui.slice(0, 4));
 
@@ -32,6 +33,7 @@ export function BlocRdv({ affaireId, rdv, aujourdhui, modifiable }: { affaireId:
       });
       if (!r.ok) return setErreur(r.message);
       setErreur(null);
+      setAvertissements(r.avertissements);
       setAjout(false);
       router.refresh();
     });
@@ -71,6 +73,11 @@ export function BlocRdv({ affaireId, rdv, aujourdhui, modifiable }: { affaireId:
             <Button type="submit" disabled={enCours}>{enCours ? "Enregistrement…" : "Enregistrer le RDV"}</Button>
           </div>
         </form>
+      )}
+      {avertissements.length > 0 && (
+        <p aria-live="polite" className="border-b bg-etat-attention/10 px-5 py-2.5 text-[14px] text-etat-attention">
+          RDV enregistré. {avertissements.join(" ")}
+        </p>
       )}
       {rdv.length === 0 ? (
         <p className="px-5 py-4 text-[15px] text-muted-foreground">Aucun RDV.</p>

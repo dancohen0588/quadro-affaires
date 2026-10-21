@@ -10,7 +10,7 @@ const entete = (page: Page) => page.getByTestId("entete-affaire");
 
 /** Ouvre la fiche d'une affaire du magasin à l'étape donnée (pastille « 01 · Découverte »). */
 async function ouvrirAffaireA(page: Page, etape: string) {
-  await page.goto("/affaires?toutes");
+  await page.goto("/affaires?portee=magasin");
   const ligne = page.getByRole("row").filter({ hasText: etape }).first();
   await ligne.getByRole("link").click();
   await expect(page).toHaveURL(/\/affaires\/[0-9a-f-]{36}$/);
