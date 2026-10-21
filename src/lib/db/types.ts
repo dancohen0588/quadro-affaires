@@ -495,14 +495,14 @@ isOneToOne: false
                   ]
                 },"tache": {
                   Row: {
-                    "affaire_id": string | null,"assignee_id": string,"created_at": string,"created_by": string | null,"detail": string | null,"echeance": string | null,"etape_instance_id": string | null,"fait_le": string | null,"fait_par": string | null,"id": string,"modele_code": string | null,"optionnelle": boolean,"origine": string,"statut": string,"titre": string,"updated_at": string
+                    "affaire_id": string | null,"assignee_id": string,"client_id": string | null,"created_at": string,"created_by": string | null,"detail": string | null,"echeance": string | null,"etape_instance_id": string | null,"fait_le": string | null,"fait_par": string | null,"id": string,"modele_code": string | null,"optionnelle": boolean,"origine": string,"statut": string,"titre": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "affaire_id"?: string | null,"assignee_id": string,"created_at"?: string,"created_by"?: string | null,"detail"?: string | null,"echeance"?: string | null,"etape_instance_id"?: string | null,"fait_le"?: string | null,"fait_par"?: string | null,"id"?: string,"modele_code"?: string | null,"optionnelle"?: boolean,"origine"?: string,"statut"?: string,"titre": string,"updated_at"?: string
+                    "affaire_id"?: string | null,"assignee_id": string,"client_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"detail"?: string | null,"echeance"?: string | null,"etape_instance_id"?: string | null,"fait_le"?: string | null,"fait_par"?: string | null,"id"?: string,"modele_code"?: string | null,"optionnelle"?: boolean,"origine"?: string,"statut"?: string,"titre": string,"updated_at"?: string
                   }
                   Update: {
-                    "affaire_id"?: string | null,"assignee_id"?: string,"created_at"?: string,"created_by"?: string | null,"detail"?: string | null,"echeance"?: string | null,"etape_instance_id"?: string | null,"fait_le"?: string | null,"fait_par"?: string | null,"id"?: string,"modele_code"?: string | null,"optionnelle"?: boolean,"origine"?: string,"statut"?: string,"titre"?: string,"updated_at"?: string
+                    "affaire_id"?: string | null,"assignee_id"?: string,"client_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"detail"?: string | null,"echeance"?: string | null,"etape_instance_id"?: string | null,"fait_le"?: string | null,"fait_par"?: string | null,"id"?: string,"modele_code"?: string | null,"optionnelle"?: boolean,"origine"?: string,"statut"?: string,"titre"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -516,6 +516,12 @@ isOneToOne: false
       columns: ["assignee_id"]
 isOneToOne: false
       referencedRelation: "profil"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "tache_client_id_fkey"
+      columns: ["client_id"]
+isOneToOne: false
+      referencedRelation: "client"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "tache_created_by_fkey"
@@ -577,6 +583,19 @@ isOneToOne: false
           Functions: {
             "appliquer_effets":
 { Args: { "affaire_id": string,"effets": Json,"ouvertes": (string)[] }; Returns: undefined
+                           },
+"creer_affaires":
+{ Args: { "affaires": Json,"client_id": string }; Returns: (string)[]
+                           },
+"identite_client":
+{ Args: { "client_id": string }; Returns: {
+              "nom": string,"prenom": string,"raison_sociale": string,"type": string
+            }[]
+                           },
+"rechercher_clients":
+{ Args: { "q": string }; Returns: {
+              "affaires": number,"id": string,"magasin": string,"nom": string,"prenom": string,"raison_sociale": string,"telephone": string,"type": string,"ville": string,"visible": boolean
+            }[]
                            }
           }
           Enums: {

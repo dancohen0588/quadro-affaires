@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { adaptateurs } from "@/adapters";
 import { instantParis } from "@/lib/format";
+import { avertissementsCharge, type SeuilsCharge } from "@/lib/rules/charge";
+import { ajouterJours } from "@/lib/rules/calendrier";
 import type { Resultat } from "@/lib/process/moteur";
 import { clientUtilisateur } from "@/lib/supabase/server";
 import { exigerProfil } from "@/server/garde";
@@ -55,6 +57,16 @@ export async function validerEtape(brut: EntreeValidation): Promise<ResultatActi
   if (!lu.success) return { ok: false, message: "Demande de validation invalide." };
   const { affaireId, ...v } = lu.data;
   return executer(affaireId, (a, moment) => a.moteur.valider(a.etat, { ...moment, ...v, dates: a.dates }));
+}
+
+const entreeCloture = z.object({ affaireId: z.uuid(), statut: z.enum(["perdue", "abandonnee"]), motif: z.string().trim().min(1) });
+
+/** Clôt une affaire avant la vente, perdue ou abandonnée, avec un motif (EF-25, RG-06). */
+export async function cloreAffaire(brut: z.input<typeof entreeCloture>): Promise<ResultatAction> {
+  const lu = entreeCloture.safeParse(brut);
+  if (!lu.success) return { ok: false, message: "Choisissez l'issue et le motif." };
+  const { affaireId, statut, motif } = lu.data;
+  return executer(affaireId, (a, moment) => a.moteur.clore(a.etat, { ...moment, statut, motif, dates: a.dates }));
 }
 
 /** Repasse une commande AGEM depuis un SAV ouvert (recommande). */
@@ -111,12 +123,27 @@ export async function ajouterRdv(brut: EntreeRdv): Promise<ResultatAction> {
   }
   const { data: r3 } = await db.from("rdv").select("rang").eq("affaire_id", affaireId).eq("type", "R3").neq("statut", "annule");
   const rang = type === "R3" ? Math.max(0, ...(r3 ?? []).map((r) => r.rang)) + 1 : 1;
+  // RG-30, RG-31 : au-delà des seuils, le RDV est enregistré avec un avertissement.
+  const [{ data: autres }, { data: seuils }, { data: personne }] = await Promise.all([
+    db.from("rdv").select("type, debut, statut").eq("profil_id", profilId)
+      .gte("debut", instantParis(ajouterJours(date, -7), "00:00")).lte("debut", instantParis(ajouterJours(date, 7), "23:59")),
+    db.from("parametre").select("valeur").eq("cle", "seuils").maybeSingle(),
+    db.from("profil").select("prenom").eq("id", profilId).maybeSingle(),
+  ]);
   const { error } = await db.from("rdv").insert({
     affaire_id: affaireId, client_id: affaire.client_id, type, rang, debut: instantParis(date, heure), profil_id: profilId, notes: notes || null,
   });
   if (error) return { ok: false, message: message(error, "Le RDV n'a pas pu être enregistré.") };
   revalidatePath(`/affaires/${affaireId}`);
-  return { ok: true, avertissements: [] };
+  const s = (seuils?.valeur ?? {}) as Partial<SeuilsCharge>;
+  return {
+    ok: true,
+    avertissements: avertissementsCharge(
+      { type, jour: date }, autres ?? [],
+      { max_r2_par_jour: s.max_r2_par_jour ?? 1, max_r3_par_semaine: s.max_r3_par_semaine ?? 4 },
+      personne?.prenom ?? "Le concepteur",
+    ),
+  };
 }
 
 /** Marque un RDV comme fait (EF-34). */

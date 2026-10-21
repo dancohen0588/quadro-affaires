@@ -72,12 +72,7 @@ export async function chargerAffaireProcess(db: Client, affaireId: string): Prom
     const { definition } = lire(version, "Version de process");
     definitions.set(affaire.process_version_id, chargerProcess(definition));
   }
-  const parametre = new Map(lire(parametres, "Paramètres").map((p) => [p.cle, p.valeur]));
-  const seuils = (parametre.get("seuils") ?? {}) as { relance_r2_sans_reponse_jours?: number };
-  const moteur = creerMoteur(definitions.get(affaire.process_version_id)!, {
-    motifsAutorises: (parametre.get("motifs_non_vente") ?? []) as string[],
-    relanceSansReponseJours: seuils.relance_r2_sans_reponse_jours,
-  });
+  const moteur = moteurDe(definitions.get(affaire.process_version_id)!, lire(parametres, "Paramètres"));
 
   type TacheLue = { titre: string; optionnelle: boolean; etape_instance: { etape_code: string; iteration: number } };
   if (planning.error) throw new ErreurProcess(`Planning : ${planning.error.message}`);
@@ -102,6 +97,28 @@ export async function chargerAffaireProcess(db: Client, affaireId: string): Prom
     dates: datesAffaire(lignes),
     ouvertes: moteur.ouvertes(etat).map(cleEtape),
   };
+}
+
+type Parametre = { cle: string; valeur: unknown };
+
+function moteurDe(definition: ProcessDefinition, parametres: Parametre[]): Moteur {
+  const parametre = new Map(parametres.map((p) => [p.cle, p.valeur]));
+  const seuils = (parametre.get("seuils") ?? {}) as { relance_r2_sans_reponse_jours?: number };
+  return creerMoteur(definition, {
+    motifsAutorises: (parametre.get("motifs_non_vente") ?? []) as string[],
+    relanceSansReponseJours: seuils.relance_r2_sans_reponse_jours,
+  });
+}
+
+/** Moteur de la version de process active, pour démarrer de nouvelles affaires (RG-04). */
+export async function moteurActif(db: Client): Promise<{ moteur: Moteur; versionId: string }> {
+  const [version, parametres] = await Promise.all([
+    db.from("process_version").select("id, definition").eq("active", true).single(),
+    db.from("parametre").select("cle, valeur").in("cle", ["motifs_non_vente", "seuils"]),
+  ]);
+  const { id, definition } = lire(version, "Version de process active");
+  if (!definitions.has(id)) definitions.set(id, chargerProcess(definition));
+  return { moteur: moteurDe(definitions.get(id)!, lire(parametres, "Paramètres")), versionId: id };
 }
 
 /** Écrit les effets d'une décision du moteur en une transaction. Renvoie un message d'erreur lisible, ou null. */

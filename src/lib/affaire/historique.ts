@@ -64,6 +64,9 @@ export function decrire(j: JournalLigne, ctx: ContexteHistorique): EvenementVue 
     }
     case "tache":
       if (devient("statut", "faite")) return evenement(`Tâche faite : ${str(apres, "titre")}`, str(apres, "fait_le") ?? j.at, str(apres, "fait_par") ?? j.auteur_id);
+      if (!insertion && str(apres, "statut") === "a_faire" && str(avant, "echeance") && change(avant, apres, "echeance") && str(apres, "echeance")) {
+        return evenement(`Tâche reportée au ${dateCourte(str(apres, "echeance")!)} : ${str(apres, "titre")}`);
+      }
       if (insertion && str(apres, "origine") === "relance" && str(apres, "statut") === "a_faire") {
         const echeance = str(apres, "echeance");
         return evenement(`Relance prévue${echeance ? ` le ${dateCourte(echeance)}` : ""} : ${str(apres, "titre")}`);

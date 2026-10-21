@@ -383,6 +383,7 @@ Une vente a au moins une affaire (`affaire.vente_id`), toutes du même client.
 | --- | --- | --- |
 | affaire_id | uuid → affaire | nul pour une tâche libre |
 | etape_instance_id | uuid → etape_instance | nul hors process |
+| client_id | uuid → client | rappel convenu au R0, pour un contact sans affaire (RG-35) |
 | modele_code | text | code de la tâche modèle, pour éviter les doublons |
 | titre, detail | text | |
 | assignee_id | uuid → profil | |
@@ -734,6 +735,14 @@ Navigation latérale (teal) : Ma journée, Mes affaires, Pipeline, Planning, Rè
 - EF-23 Créer une ou plusieurs affaires pour un client (projet, concepteur, magasin) ; libellé et contremarque préremplis.
 - EF-24 Liste « Mes affaires » : filtres phase, étape, statut, inactivité, concepteur (gérants), magasin (gérants) ; tri par prochaine échéance ; 30 lignes lisibles sans défilement horizontal sur un portable 13 pouces.
 - EF-25 Clore une affaire perdue ou abandonnée avec motif.
+
+Précisions (session 3.1) :
+- le contact rapide crée un client sans affaire (R0) ; les affaires se créent depuis la fiche client, au R0 (à rappeler) ou au R1 (découverte), une par projet, dans la version de process active (`public.creer_affaires`, tout ou rien) ;
+- la détection des clients existants cherche dans les trois magasins, sans tenir compte des accents ni des espaces des numéros (`public.rechercher_clients`) ; un client d'un autre magasin reçoit une affaire sans être ressaisi et devient alors visible ; le doublon exact nom + téléphone est refusé par un index unique ;
+- la clôture (EF-25) n'est proposée qu'avant la vente : les étapes ouvertes passent `sautee`, leurs tâches sont annulées et l'archivage s'ouvre ;
+- Ma journée : les relances dues sont dans l'encadré « Relances » et non dans la liste « À faire » ; une tâche cochée reste affichée, barrée, jusqu'au lendemain ; les jauges et « Mes affaires » ne s'affichent que pour qui porte des affaires ; « Règlements à suivre » montre les échéances attendues sous 7 jours ou en retard (toutes pour le gérant finance) ;
+- files des gérants (EF-17) selon le rôle de référent : BPA à donner (retard au-delà de 3 jours ouvrés), plannings à confirmer et dossiers de pose (gérant logistique), factures récapitulatives (gérant finance) ;
+- RG-30 et RG-31 : à l'ajout d'un RDV, le dépassement est signalé sans bloquer.
 
 ### 9.4 Fiche affaire
 - EF-30 En-tête : libellé, client (lien), magasin, concepteur, contremarque, montant devis ou BDC, statut, étape courante, lien PCloud.

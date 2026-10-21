@@ -14,7 +14,7 @@ import { creerMoteur } from "../process/moteur";
 import type { ProcessDefinition, Role } from "../process/schema";
 import { indexerEtapes } from "../process/valider";
 import { contremarqueParDefaut, libelleAffaire, type ClientIdentite } from "../rules/affaire";
-import { ajouterJours, ajouterJoursOuvres, estJourOuvre, semaineIso, type DateIso } from "../rules/calendrier";
+import { ajouterJours, ajouterJoursOuvres, estJourOuvre, jourDeSemaine, semaineIso, type DateIso } from "../rules/calendrier";
 import { genererEcheancier } from "../rules/echeancier";
 import { creerAlea } from "./aleatoire";
 import { COMMUNES, NOMS, PRENOMS, RAISONS_SOCIALES, RUES, emailFictif, telephoneFictif } from "./noms";
@@ -117,12 +117,15 @@ const CONCEPTEURS: Record<CodeMagasin, readonly (readonly [string, number])[]> =
 };
 
 /** Cas imposés : magasin, étape courante, rang parmi les affaires de cette étape, réglages. */
-type Reglage = { cas: CasDemo; age?: number; concepteur?: string; iterationsR3?: number; rdvDans?: number };
+type Reglage = { cas?: CasDemo; age?: number; concepteur?: string; iterationsR3?: number; rdvDans?: number };
 const REGLAGES: Record<string, Reglage[]> = {
   "CIO:R2:0": [{ cas: "manon_r2_aujourdhui", concepteur: "manon", age: 2 }],
   "CIO:R3:0": [{ cas: "r3n_en_cours", concepteur: "manon", iterationsR3: 2, age: 4 }],
   "CIO:R3:1": [{ cas: "manon_r2_aujourdhui", concepteur: "manon", age: 1 }],
   "CIO:R3:2": [{ cas: "manon_r2_aujourdhui", concepteur: "manon", age: 0 }],
+  // Semaine de Manon à 4 R3 sur 4 (RG-31) : ces deux affaires vont à Eva.
+  "CIO:PREP_R3:0": [{ concepteur: "eva" }],
+  "CIO:PREP_COMMANDE:0": [{ concepteur: "eva" }],
   "VAL:R3:0": [{ cas: "r3n_en_cours", concepteur: "clara", iterationsR3: 2, age: 5 }],
   "AIX:R3:0": [{ cas: "r3n_en_cours", concepteur: "alexia", iterationsR3: 2, age: 5 }],
   "VAL:ARC:0": [{ cas: "arc_en_retard", age: 8 }],
@@ -230,7 +233,9 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
     return affaire;
   }
 
-  function rdv(affaire: Insert<"affaire">, type: Insert<"rdv">["type"], jour: DateIso, profil: string, rang = 1, notes?: string) {
+  function rdv(affaire: Insert<"affaire">, type: Insert<"rdv">["type"], date: DateIso, profil: string, rang = 1, notes?: string) {
+    // Les showrooms sont fermés le dimanche : un RDV qui y tomberait passe au samedi.
+    const jour = jourDeSemaine(date) === 0 ? ajouterJours(date, -1) : date;
     const fait = jour < j0;
     jeu.rdv.push({
       id: a.uuid(),
@@ -397,7 +402,7 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
       for (let rang = 0; rang < nombre; rang++) {
         const reglages = REGLAGES[`${magasin}:${code}:${rang}`] ?? [];
         const reglage = Object.assign({}, ...reglages) as Partial<Reglage>;
-        creerAffaireActive(magasin, code, reglage, reglages.map((r) => r.cas));
+        creerAffaireActive(magasin, code, reglage, reglages.flatMap((r) => (r.cas ? [r.cas] : [])));
       }
     }
   }
@@ -559,7 +564,7 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
     const quand = ajouterJours(j0, dans);
     const client = nouveauClient(magasin, ajouterJours(j0, -a.entier(3, 8)), { rappel: quand });
     jeu.taches.push({
-      id: a.uuid(), titre: `Rappeler ${client.nom} ${client.prenom} (rappel convenu au R0)`, assignee_id: p[concepteur],
+      id: a.uuid(), client_id: client.id, titre: `Rappeler ${client.nom} ${client.prenom} (rappel convenu au R0)`, assignee_id: p[concepteur],
       echeance: quand, statut: "a_faire", origine: "relance", created_at: client.created_at, updated_at: client.created_at,
       created_by: p[concepteur],
     });

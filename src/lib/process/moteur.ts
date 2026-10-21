@@ -19,7 +19,8 @@ export type TypeRdv = (typeof TYPES_RDV)[number];
 export type EtapeEtat = {
   code: string;
   iteration: number;
-  statut: "en_cours" | "faite";
+  /** « sautee » : étape fermée sans issue par la clôture de l'affaire (EF-25). */
+  statut: "en_cours" | "faite" | "sautee";
   branche: Branche;
   phase: CodePhase;
   issue: string | null;
@@ -71,6 +72,7 @@ export type OrigineTache = "process" | "relance" | "avis";
 
 export type Effet =
   | { type: "fermer_etape"; etape: string; iteration: number; issue: string; motif: string | null; quand: string; par: string }
+  | { type: "sauter_etape"; etape: string; iteration: number; motif: string; quand: string; par: string }
   | { type: "annuler_taches"; etape: string; iteration: number }
   | { type: "ouvrir_etape"; etape: string; iteration: number; branche: Branche; phase: CodePhase; quand: string }
   | {
@@ -102,7 +104,8 @@ export type CodeErreur =
   | "branches_ouvertes"
   | "sav_non_ouvert"
   | "recommande_en_cours"
-  | "etape_inconnue";
+  | "etape_inconnue"
+  | "cloture_impossible";
 
 export type Resultat =
   | { ok: true; etat: EtatAffaire; effets: Effet[]; avertissements: string[] }
@@ -329,7 +332,40 @@ export function creerMoteur(definition: ProcessDefinition, options: OptionsMoteu
     return terminer(ouvrir(etat, "COMMANDE_AGEM", "sav", m, m.dates ?? {}, effets), effets);
   }
 
-  return { definition, demarrer, valider, repasserCommandeSav, blocage, ouvertes, etapeCourante };
+  /**
+   * Clôt une affaire avant la vente, perdue ou abandonnée, avec un motif (EF-25, RG-06) : les étapes
+   * ouvertes sont sautées, leurs tâches annulées, et l'archivage s'ouvre comme après une issue « fin ».
+   */
+  function clore(etat: EtatAffaire, c: Moment & { statut: "perdue" | "abandonnee"; motif: string }): Resultat {
+    if (etat.statut === "cloturee" || etat.statut === "perdue" || etat.statut === "abandonnee") {
+      return refus("affaire_close", "L'affaire est déjà close.");
+    }
+    if (etat.statut !== "active") {
+      return refus("cloture_impossible", "Une affaire vendue ne se clôt pas ainsi : poursuivez le process ou ouvrez un SAV.");
+    }
+    if (!c.motif?.trim()) return refus("motif_obligatoire", "Choisissez un motif (RG-06).");
+    if (!options.motifsAutorises.includes(c.motif)) return refus("motif_inconnu", `Motif inconnu : « ${c.motif} » (RG-06).`);
+    const effets: Effet[] = [];
+    const ouvertesAvant = etat.etapes.filter((e) => e.statut === "en_cours");
+    for (const e of ouvertesAvant) {
+      effets.push({ type: "sauter_etape", etape: e.code, iteration: e.iteration, motif: c.motif, quand: c.quand, par: c.par });
+      effets.push({ type: "annuler_taches", etape: e.code, iteration: e.iteration });
+    }
+    effets.push({ type: "statut_affaire", statut: c.statut, motif: c.motif });
+    let suite: EtatAffaire = {
+      ...etat,
+      statut: c.statut,
+      etapes: etat.etapes.map((e) =>
+        e.statut === "en_cours" ? { ...e, statut: "sautee", motif: c.motif, fin: c.quand, validePar: c.par } : e,
+      ),
+      tachesOuvertes: etat.tachesOuvertes.filter((t) => !ouvertesAvant.some((e) => e.code === t.etape && e.iteration === t.iteration)),
+    };
+    const archivage = [...index.values()].find(({ etape }) => etape.issues.some((i) => i.type === "end" && !i.vers))?.etape.code;
+    if (archivage) suite = ouvrir(suite, archivage, null, c, c.dates ?? {}, effets);
+    return terminer(suite, effets);
+  }
+
+  return { definition, demarrer, valider, repasserCommandeSav, blocage, ouvertes, etapeCourante, clore };
 }
 
 export type Moteur = ReturnType<typeof creerMoteur>;

@@ -39,7 +39,7 @@ export const cleEtape = (e: { code: string; iteration: number }) => `${e.code}.$
 
 export function construireEtat(l: LignesAffaire): EtatAffaire {
   const etapes: EtapeEtat[] = l.etapes
-    .filter((e) => e.statut === "en_cours" || e.statut === "faite")
+    .filter((e) => e.statut === "en_cours" || e.statut === "faite" || e.statut === "sautee")
     .sort((a, b) => (a.debut_at ?? "").localeCompare(b.debut_at ?? "") || a.iteration - b.iteration)
     .map((e) => ({
       code: e.etape_code,
