@@ -73,8 +73,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Démarrer Supabase (base, authentification, API)
-        run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,realtime,storage-api,supavisor,postgres-meta
+      - name: Démarrer Supabase (base, authentification, API, stockage du PCloud simulé)
+        run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,realtime,supavisor,postgres-meta
       - name: Exposer l'URL et les clés de la base locale
         run: |
           pnpm exec supabase status -o json > /tmp/supabase.json

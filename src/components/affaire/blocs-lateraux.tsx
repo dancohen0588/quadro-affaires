@@ -1,4 +1,5 @@
-import { FileText } from "lucide-react";
+import Link from "next/link";
+import { FileText, FolderOpen } from "lucide-react";
 import type { DocumentVue, IntervenantVue } from "@/lib/affaire/fiche";
 import type { EvenementVue } from "@/lib/affaire/historique";
 import { dateCourte } from "@/lib/format";
@@ -18,18 +19,10 @@ export function Bloc({ titre, id, action, children }: { titre: string; id: strin
 
 const ETAT_DOC = { ok: ["ok", "OK"], attendu: ["attention", "Attendu"], a_venir: ["neutre", "À venir"] } as const;
 
-/** Documents attendus, liste de contrôle par étape (EF-35). Le dépôt arrive en J5 (PCloud simulé). */
-export function DocumentsAttendus({ documents, annee }: { documents: DocumentVue[]; annee: number }) {
+/** Documents attendus, liste de contrôle par étape (EF-35) ; dépôt et rangement dans le PCloud simulé (J5). */
+export function DocumentsAttendus({ documents, annee, deposer, lienPcloud }: { documents: DocumentVue[]; annee: number; deposer?: React.ReactNode; lienPcloud: string }) {
   return (
-    <Bloc
-      titre="Documents attendus"
-      id="titre-documents"
-      action={
-        <span title="Dépôt et rangement dans PCloud simulé : bloc J5" className="cursor-not-allowed rounded-lg border px-3 py-1.5 text-[13px] font-semibold text-muted-foreground">
-          Déposer
-        </span>
-      }
-    >
+    <Bloc titre="Documents attendus" id="titre-documents" action={deposer}>
       {documents.length === 0 ? (
         <p className="px-5 py-4 text-[15px] text-muted-foreground">Aucun document attendu à ce stade.</p>
       ) : (
@@ -56,7 +49,12 @@ export function DocumentsAttendus({ documents, annee }: { documents: DocumentVue
           })}
         </ul>
       )}
-      <p className="border-t px-5 py-3 text-[13px] text-muted-foreground">Déposé ici, un fichier sera renommé et rangé dans PCloud au bon endroit (bloc J5).</p>
+      <p className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-3 text-[13px] text-muted-foreground">
+        Déposé ici, un fichier est renommé et rangé dans PCloud au bon endroit.
+        <Link href={lienPcloud} className="inline-flex items-center gap-1 font-semibold text-teal-700 underline-offset-2 hover:underline">
+          <FolderOpen aria-hidden className="size-3.5" /> PCloud (simulé)
+        </Link>
+      </p>
     </Bloc>
   );
 }

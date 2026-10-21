@@ -99,6 +99,14 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Boîte d'envoi : /boite-envoi, aperçu dans une iframe sandbox (srcDoc) ; liens Horloge et Boîte d'envoi dans le bandeau de démo, qui affiche aussi la date simulée.
 - e2e : zz-horloge.spec.ts tourne en dernier (il avance l'horloge, crée tâches et mails, puis la remet à l'heure).
 
+## Choix techniques (session 5.1)
+- PCloud simulé : DemoFileStore (src/adapters/demo.ts) sur un port de stockage ; Supabase Storage, bucket privé pcloud-demo (src/adapters/pcloud-demo.ts), créé à l'exécution et par le seed, jamais par une migration (le schéma storage appartient au service Storage).
+- Noms PCloud logiques (accents compris) dans document.dossier_pcloud et nom_final ; clés de stockage ASCII dérivées par cleStockage (src/lib/pcloud.ts). La ligne document reste la référence ; rien n'est jamais écrasé (« nom (2).ext »).
+- Modèle « NOUVEAU CLIENT » : parametre.pcloud_modele (liste provisoire) ; dossier d'affaire « {MAG}/{CLIENT} - {Projet} ({concepteur}) » créé à la création des affaires (échec non bloquant) ou au premier dépôt.
+- Dépôt : server action deposerDocument (src/app/(app)/affaires/documents-actions.ts), 4 Mo au plus (bodySizeLimit, limite Vercel) ; renommage nomDeDepot, contrôle formatAccepte, tâche liée faite (TACHE_DU_DOCUMENT).
+- Débit AGEM : lecture .docx sans dépendance (src/lib/debit/docx.ts, node:zlib), extraction src/lib/debit/agem.ts ; valeurs proposées puis validerDebit → enregistrerCommande. KPI-11 : src/lib/rules/marge.ts (fiche) et vue kpi_marge (Pilotage).
+- Jeu de démo : un réglage peut imposer un concepteur sans changer le tirage (remplace) ; le cas debit_agem_exemple correspond au débit anonymisé.
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.

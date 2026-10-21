@@ -45,6 +45,18 @@ export function BlocVente({ f, annee }: { f: Fiche; annee: number }) {
             </dd>
             {v.affaires.length > 1 && (<><dt className="text-muted-foreground">Vente commune</dt><dd>{v.affaires.join(" + ")}</dd></>)}
             {v.financement === "franfinance" && (<><dt className="text-muted-foreground">Financement</dt><dd>Franfinance</dd></>)}
+            <dt className="text-muted-foreground">Marge estimée</dt>
+            <dd data-testid="marge-estimee">
+              {f.marge ? (
+                <>
+                  <span className="font-semibold text-encre">{euros(f.marge.margeCts, true)} HT</span>
+                  {f.marge.tauxPct !== null && ` · ${String(f.marge.tauxPct).replace(".", ",")} %`}
+                  <span className="text-muted-foreground"> · achats {euros(f.marge.achatsCts, true)}{f.marge.complete ? "" : ", d'autres commandes sans prix"}</span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">au dépôt du débit AGEM (KPI-11)</span>
+              )}
+            </dd>
             <dt className="text-muted-foreground">Commission</dt>
             <dd className="flex items-center gap-2">
               {v.commissionLe ? `saisie le ${dateCourte(v.commissionLe, annee)}` : f.echeances.some((e) => e.type === "acompte_1" && e.recuLe) ? "à saisir (RG-14)" : "après l'acompte 1"}

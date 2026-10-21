@@ -6,6 +6,7 @@ import { adaptateurs } from "@/adapters";
 import { contremarqueParDefaut, erreursAffaire, libelleAffaire, nomClient, type ClientIdentite } from "@/lib/rules/affaire";
 import { clientUtilisateur } from "@/lib/supabase/server";
 import { exigerProfil } from "@/server/garde";
+import { creerDossiersAffaires } from "@/server/pcloud";
 import { moteurActif } from "@/server/process";
 
 /** Contacts, clients et création d'affaires (EF-20 à EF-23). */
@@ -149,6 +150,8 @@ export async function creerAffaires(brut: EntreeAffaires): Promise<ResultatAffai
   }
   const { data: ids, error } = await db.rpc("creer_affaires", { client_id: e.clientId, affaires: affaires as never });
   if (error) return { ok: false, message: ["42501", "22023", "P0002"].includes(error.code) ? error.message : "Les affaires n'ont pas pu être créées." };
+  // Copie du modèle « NOUVEAU CLIENT » dans le PCloud simulé (section 13.4) ; un échec n'annule pas la création.
+  await creerDossiersAffaires(ids ?? []);
   revalidatePath(`/clients/${e.clientId}`);
   revalidatePath("/affaires");
   return { ok: true, affaires: ids ?? [] };

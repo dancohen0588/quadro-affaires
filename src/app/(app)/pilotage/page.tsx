@@ -41,6 +41,8 @@ export default async function Page({ searchParams }: PageProps<"/pilotage">) {
   const nbVentes = somme(d.ventes, (l) => l.nb_ventes);
   const caCompact = eurosCompacts(ca);
   const panier = moyenne(ca, nbVentes);
+  const caMarge = somme(d.marge, (l) => l.ca_ht_cts);
+  const tauxMarge = taux(caMarge - somme(d.marge, (l) => l.achats_cts), caMarge);
   const r3 = somme(d.transformation, (l) => l.nb_r3);
   const vendues = somme(d.transformation, (l) => l.nb_vendues);
   const tx = taux(vendues, r3);
@@ -91,7 +93,7 @@ export default async function Page({ searchParams }: PageProps<"/pilotage">) {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <CarteKpi id="kpi-en-cours" libelle="Affaires en cours" valeur={String(nbEnCours)} detail={parMagasin.join(" · ")} />
         <CarteKpi id="kpi-ca" libelle={`CA signé · ${libellePeriode}`} valeur={caCompact.valeur} unite={`${caCompact.unite} HT`}
-          detail={`${nbVentes} BDC${panier ? ` · panier moyen ${euros(panier, true)}` : ""}`} />
+          detail={`${nbVentes} BDC${panier ? ` · panier moyen ${euros(panier, true)}` : ""}${tauxMarge !== null ? ` · marge estimée ${tauxMarge} %` : ""}`} />
         <CarteKpi id="kpi-transformation" libelle="Transformation R3 → vente" valeur={tx === null ? "—" : String(tx)} unite={tx === null ? undefined : "%"}
           detail={`${r3} premier${r3 > 1 ? "s" : ""} R3 · ${pluriel(vendues, "vendue")} à ce jour`} />
         <CarteKpi id="kpi-retard" libelle="Affaires en retard" valeur={String(retard.total)} ton={retard.total ? "retard" : "normal"}

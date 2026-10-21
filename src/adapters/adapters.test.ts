@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DemoClock, SystemClock, dateParis } from "./clock";
-import { DemoMailer, boiteEnvoiMemoire, demoFileStore } from "./demo";
+import { DOSSIER_VIDE, DemoFileStore, DemoMailer, boiteEnvoiMemoire, stockageMemoire } from "./demo";
 import { creerAdaptateurs } from "./index";
-import { NonDisponibleError } from "./types";
 
 describe("Clock", () => {
   it("donne la date de Paris, y compris autour de minuit UTC et du changement d'heure", () => {
@@ -55,7 +54,22 @@ describe("sélection des adaptateurs (section 5.4)", () => {
     expect(() => a.calendar).toThrow(/B5/);
   });
 
-  it("signale le PCloud simulé comme prévu en J5", async () => {
-    await expect(demoFileStore.lister({ dossierId: "x", sousDossier: "01" })).rejects.toBeInstanceOf(NonDisponibleError);
+  it("PCloud simulé : copie du modèle, dépôt sans écrasement, liste et lien (section 13.4)", async () => {
+    const stockage = stockageMemoire();
+    const pcloud = new DemoFileStore(stockage);
+    const dossier = await pcloud.creerDossierClient({ chemin: "VAL/ROUX - Cuisine (Clara)", sousDossiers: ["01 - Données d'Entrée", "05 - Commande AGEM / Commande AGEM"] });
+    expect(dossier).toEqual({ id: "VAL/ROUX - Cuisine (Clara)", url: null });
+    expect([...stockage.fichiers.keys()]).toEqual([
+      `VAL/ROUX - Cuisine (Clara)/01 - Donnees d'Entree/${DOSSIER_VIDE}`,
+      `VAL/ROUX - Cuisine (Clara)/05 - Commande AGEM/Commande AGEM/${DOSSIER_VIDE}`,
+    ]);
+    const depot = (nomFinal: string) => pcloud.deposer({ dossierId: dossier.id, sousDossier: "05 - Commande AGEM / Commande AGEM", nomFinal, contenu: new Blob(["x"]) });
+    expect(await depot("Débit.docx")).toEqual({ id: "VAL/ROUX - Cuisine (Clara)/05 - Commande AGEM/Commande AGEM/Debit.docx", nomFinal: "Débit.docx", cheminRelatif: "05 - Commande AGEM/Commande AGEM/Débit.docx" });
+    expect((await depot("Débit.docx")).nomFinal).toBe("Débit (2).docx");
+    expect((await depot("README")).nomFinal).toBe("README");
+    expect((await depot("README")).nomFinal).toBe("README (2)");
+    expect(await pcloud.lister({ dossierId: dossier.id, sousDossier: "05 - Commande AGEM / Commande AGEM" })).toEqual(["Debit.docx", "Debit (2).docx", "README", "README (2)"]);
+    expect(await pcloud.lien({ fichierId: "VAL/ROUX - Cuisine (Clara)/05 - Commande AGEM/Commande AGEM/Debit.docx" })).toMatch(/^memoire:/);
+    expect(await pcloud.lien({ fichierId: "absent" })).toBeNull();
   });
 });

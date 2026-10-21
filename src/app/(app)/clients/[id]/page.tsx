@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FolderOpen } from "lucide-react";
 import { z } from "zod";
 import { adaptateurs } from "@/adapters";
 import { Etat, PastillePhase } from "@/components/affaire/pastille-phase";
@@ -68,7 +69,12 @@ export default async function FicheClient({ params }: PageProps<"/clients/[id]">
             {[c.type === "professionnel" ? "Professionnel" : "Particulier", (c.magasin as unknown as { nom: string }).nom, c.gesteos_ref].filter(Boolean).join(" · ")}
           </p>
         </div>
-        {peutCreer && <NouvellesAffaires client={{ id: c.id, nom }} referentiel={referentiel} moi={{ id: moi.id, estGerant: moi.role === "gerant" }} />}
+        <div className="flex items-center gap-3">
+          <Link href={`/pcloud?client=${c.id}`} className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-teal-700 underline-offset-2 hover:underline">
+            <FolderOpen aria-hidden className="size-4" /> PCloud (simulé)
+          </Link>
+          {peutCreer && <NouvellesAffaires client={{ id: c.id, nom }} referentiel={referentiel} moi={{ id: moi.id, estGerant: moi.role === "gerant" }} />}
+        </div>
       </header>
 
       <div className="grid gap-5 px-8 py-6 xl:grid-cols-[minmax(0,1fr)_400px]">

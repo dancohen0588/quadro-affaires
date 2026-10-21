@@ -16,6 +16,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Dépôt de documents dans le PCloud simulé (J5) : 4 Mo par fichier, sous la limite de 4,5 Mo des fonctions Vercel.
+  experimental: { serverActions: { bodySizeLimit: "4.2mb" } },
   turbopack: {
     rules: {
       "*.css": {

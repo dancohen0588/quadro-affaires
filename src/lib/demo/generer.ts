@@ -13,12 +13,13 @@ import { instantParis } from "../format";
 import { creerMoteur } from "../process/moteur";
 import type { ProcessDefinition, Role } from "../process/schema";
 import { indexerEtapes } from "../process/valider";
-import { contremarqueParDefaut, libelleAffaire, type ClientIdentite } from "../rules/affaire";
+import { nomDossierAffaire } from "../pcloud";
+import { contremarqueParDefaut, libelleAffaire, nomClient, type ClientIdentite } from "../rules/affaire";
 import { ajouterJours, ajouterJoursOuvres, estJourOuvre, jourDeSemaine, semaineIso, type DateIso } from "../rules/calendrier";
 import { genererEcheancier } from "../rules/echeancier";
 import { creerAlea } from "./aleatoire";
 import { COMMUNES, NOMS, PRENOMS, RAISONS_SOCIALES, RUES, emailFictif, telephoneFictif } from "./noms";
-import type { CodeMagasin } from "./personnages";
+import { PERSONNAGES, type CodeMagasin } from "./personnages";
 import { rejouerAffaire, type Pas } from "./rejouer";
 
 type Insert<N extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][N]["Insert"];
@@ -41,6 +42,7 @@ export const CAS_DEMO = [
   "branche_autres_fournisseurs", // 1 commande autres fournisseurs en parallèle du BPA (section 7.4)
   "vente_multi_affaires", // 1 vente qui regroupe deux affaires (D1)
   "manon_r2_aujourdhui", // la journée de Manon (scénario n° 1)
+  "debit_agem_exemple", // l'affaire du débit AGEM d'exemple, à la commande AGEM (scénario n° 5, section 13.3)
 ] as const;
 export type CasDemo = (typeof CAS_DEMO)[number];
 
@@ -117,7 +119,11 @@ const CONCEPTEURS: Record<CodeMagasin, readonly (readonly [string, number])[]> =
 };
 
 /** Cas imposés : magasin, étape courante, rang parmi les affaires de cette étape, réglages. */
-type Reglage = { cas?: CasDemo; age?: number; concepteur?: string; iterationsR3?: number; rdvDans?: number };
+type Reglage = {
+  cas?: CasDemo; age?: number; concepteur?: string; iterationsR3?: number; rdvDans?: number;
+  /** Concepteur imposé après le tirage aléatoire : le reste du jeu ne change pas. */
+  remplace?: string;
+};
 const REGLAGES: Record<string, Reglage[]> = {
   "CIO:R2:0": [{ cas: "manon_r2_aujourdhui", concepteur: "manon", age: 2 }],
   "CIO:R3:0": [{ cas: "r3n_en_cours", concepteur: "manon", iterationsR3: 2, age: 4 }],
@@ -143,7 +149,11 @@ const REGLAGES: Record<string, Reglage[]> = {
   "VAL:BPA:0": [{ cas: "jean_concepteur", concepteur: "jean" }],
   "AIX:BPA:0": [{ cas: "branche_autres_fournisseurs" }],
   "CIO:PLANNING_LIVRAISON:0": [{ cas: "vente_multi_affaires" }],
+  "VAL:COMMANDE_AGEM:0": [{ cas: "debit_agem_exemple", remplace: "jean" }],
 };
+
+/** Client et affaire du débit AGEM d'exemple anonymisé (docs/sources) : contremarque et concepteur concordent. */
+const DEBIT_EXEMPLE = { raison: "SAS VISIOLAB", nom: "ROUSSEL", prenom: "Julien", contremarque: "SAS VISIOLAB Julien ROUSSEL", projet: "bureau" as const, htCts: 745_000 };
 
 export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
   const a = creerAlea(entree.graine ?? GRAINE_DEMO);
@@ -212,8 +222,10 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
     champs: Partial<Insert<"affaire">>,
   ) {
     const identite = client as ClientIdentite;
+    const id = a.uuid();
+    const prenom = PERSONNAGES.find((x) => x.cle === concepteur)?.prenom ?? concepteur;
     const affaire: Insert<"affaire"> = {
-      id: a.uuid(),
+      id,
       client_id: client.id!,
       magasin_id: entree.magasins[magasin],
       concepteur_id: p[concepteur],
@@ -227,6 +239,9 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
       // Reprise d'historique : l'activité part de la création, les lignes liées l'avancent (RG-09).
       derniere_activite_at: at(creeLe, "10:30"),
       created_by: p[concepteur],
+      // PCloud simulé : le dossier est nommé, l'arborescence vient du modèle à l'affichage (pas de copie au seed).
+      pcloud_folder_id: nomDossierAffaire({ magasinCode: magasin, client: nomClient(identite), projet, concepteur: prenom }),
+      pcloud_url: `/pcloud?affaire=${id}`,
       ...champs,
     };
     jeu.affaires.push(affaire);
@@ -433,16 +448,28 @@ export function genererJeuDemo(entree: EntreeJeu): JeuDemo {
     const iCourant = CHEMIN.indexOf(courant);
     const passe = (c: CodeChemin) => CHEMIN.indexOf(c) < iCourant;
 
-    const concepteur = reglage.concepteur ?? a.pondere(CONCEPTEURS[magasin]);
+    const tire = reglage.concepteur ?? a.pondere(CONCEPTEURS[magasin]);
+    const concepteur = reglage.remplace ?? tire;
+    const exemple = cas.includes("debit_agem_exemple");
     const revient = cas.includes("client_qui_revient") || (iCourant <= CHEMIN.indexOf("R1") && a.proba(0.2));
     const client = revient
       ? a.choix(clientsHistoriques[magasin])
       : nouveauClient(magasin, o.R0, { pro: cas.includes("client_professionnel") });
     const multi = cas.includes("vente_multi_affaires");
-    const projets: Projet[] = multi ? ["cuisine", "dressing"] : [revient ? a.choix(["dressing", "placard", "bibliothèque"] as const) : choisirProjet()];
+    const tires: Projet[] = multi ? ["cuisine", "dressing"] : [revient ? a.choix(["dressing", "placard", "bibliothèque"] as const) : choisirProjet()];
+    const projets: Projet[] = exemple ? [DEBIT_EXEMPLE.projet] : tires;
+    if (exemple) {
+      Object.assign(client, {
+        type: "professionnel", raison_sociale: DEBIT_EXEMPLE.raison, nom: DEBIT_EXEMPLE.nom, prenom: DEBIT_EXEMPLE.prenom,
+        email: emailFictif(DEBIT_EXEMPLE.prenom, DEBIT_EXEMPLE.nom, numero),
+      });
+    }
     const vendue = passe("VENTE") || courant === "VENTE";
     const affaires = projets.map((projet) =>
-      nouvelleAffaire(client, magasin, concepteur, projet, o.R0, { statut: vendue ? "gagnee" : "active" }),
+      nouvelleAffaire(client, magasin, concepteur, projet, o.R0, {
+        statut: vendue ? "gagnee" : "active",
+        ...(exemple ? { contremarque: DEBIT_EXEMPLE.contremarque, montant_devis_ht_cts: DEBIT_EXEMPLE.htCts } : {}),
+      }),
     );
     for (const c of cas) jeu.cas[c].push(...affaires.map((x) => x.id!));
 

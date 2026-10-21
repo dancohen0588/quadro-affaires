@@ -1,9 +1,10 @@
 import "server-only";
 import { readAppMode, type AppMode } from "@/lib/env";
 import { SystemClock } from "./clock";
-import { DemoCalendarSource, DemoClock, DemoMailer, demoAuth, demoFileStore } from "./demo";
+import { DemoCalendarSource, DemoClock, DemoFileStore, DemoMailer, demoAuth } from "./demo";
 import { enregistrerMailDemo } from "./boite-envoi";
 import { lireDecalageDemo } from "./horloge-demo";
+import { stockageSupabase } from "./pcloud-demo";
 import { NonDisponibleError, type Adaptateurs } from "./types";
 
 export type { Adaptateurs } from "./types";
@@ -15,11 +16,11 @@ export type { Adaptateurs } from "./types";
  */
 export function creerAdaptateurs(mode: AppMode): Adaptateurs {
   if (mode === "demo") {
-    // Horloge lue en base (parametre.horloge_demo), mails enregistrés dans mail_sortant.
+    // Horloge lue en base (parametre.horloge_demo), mails enregistrés dans mail_sortant, PCloud sur Supabase Storage.
     return {
       auth: demoAuth,
       mailer: new DemoMailer(enregistrerMailDemo),
-      fileStore: demoFileStore,
+      fileStore: new DemoFileStore(stockageSupabase),
       calendar: new DemoCalendarSource(async () => []),
       clock: new DemoClock(lireDecalageDemo),
     };
