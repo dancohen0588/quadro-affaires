@@ -11,7 +11,24 @@ export type Mail = { objet: string; html: string };
 const echapper = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export function gabarit(c: { titre: string; intro: string; lignes?: [string, string][]; action?: { libelle: string; lien: string } }): string {
+export type Section = { titre: string; elements: { texte: string; detail?: string; ton?: "retard" | "attention" }[]; vide?: string; total?: number };
+
+const TONS = { retard: "#b4483f", attention: "#b07a1f" } as const;
+
+function rendreSection(s: Section): string {
+  const elements = s.elements.length
+    ? s.elements.map((e) => {
+        const puce = `<span style="display:inline-block;width:8px;height:8px;border-radius:4px;margin-right:8px;background:${e.ton ? TONS[e.ton] : "#9dbfae"}"></span>`;
+        const detail = e.detail ? `<br><span style="color:#4f6268;font-size:13px;margin-left:16px">${echapper(e.detail)}</span>` : "";
+        return `<li style="margin:0 0 6px;list-style:none">${puce}${echapper(e.texte)}${detail}</li>`;
+      }).join("")
+    : `<li style="list-style:none;color:#4f6268">${echapper(s.vide ?? "Rien.")}</li>`;
+  return `<h2 style="margin:20px 0 8px;font-size:15px;color:#0e3b45">${echapper(s.titre)} <span style="color:#4f6268;font-weight:400">(${s.total ?? s.elements.length})</span></h2><ul style="margin:0;padding:0">${elements}</ul>`;
+}
+
+export function gabarit(c: {
+  titre: string; intro: string; lignes?: [string, string][]; sections?: Section[]; action?: { libelle: string; lien: string };
+}): string {
   const lignes = (c.lignes ?? [])
     .map(([l, v]) => `<tr><td style="padding:4px 16px 4px 0;color:#4f6268">${echapper(l)}</td><td style="padding:4px 0;color:#15262b;font-weight:600">${echapper(v)}</td></tr>`)
     .join("");
@@ -25,6 +42,7 @@ export function gabarit(c: { titre: string; intro: string; lignes?: [string, str
     `<h1 style="margin:0 0 12px;font-size:20px;color:#0e3b45">${echapper(c.titre)}</h1>`,
     `<p style="margin:0 0 16px">${echapper(c.intro)}</p>`,
     lignes ? `<table style="border-collapse:collapse">${lignes}</table>` : "",
+    (c.sections ?? []).map(rendreSection).join(""),
     action,
     `</div></div>`,
   ].join("");

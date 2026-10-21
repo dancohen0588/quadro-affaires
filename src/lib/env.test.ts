@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isDemo, readAppMode, readDemoAccessCode, readSupabasePublicEnv } from "./env";
+import { isDemo, readAppMode, readCronSecret, readDemoAccessCode, readSupabasePublicEnv } from "./env";
 
 describe("APP_MODE", () => {
   it("accepte demo et production", () => {
@@ -31,5 +31,12 @@ describe("configuration Supabase publique", () => {
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_x",
       }),
     ).toEqual({ url: "https://abc.supabase.co", publishableKey: "sb_publishable_x" });
+  });
+});
+
+describe("CRON_SECRET", () => {
+  it("considère une chaîne vide comme absente", () => {
+    expect(readCronSecret({ CRON_SECRET: "  " })).toBeNull();
+    expect(readCronSecret({ CRON_SECRET: " abc " })).toBe("abc");
   });
 });

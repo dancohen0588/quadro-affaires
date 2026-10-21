@@ -9,7 +9,7 @@ import type { MailSortant } from "./types";
 export async function enregistrerMailDemo(mail: MailSortant): Promise<{ id: string }> {
   const { data, error } = await clientAdmin()
     .from("mail_sortant")
-    .insert({ destinataire_id: mail.destinataireId, destinataire_email: mail.destinataireEmail, type: mail.type, objet: mail.objet, html: mail.html })
+    .insert({ destinataire_id: mail.destinataireId, destinataire_email: mail.destinataireEmail, type: mail.type, objet: mail.objet, html: mail.html, cle: mail.cle ?? null })
     .select("id")
     .single();
   if (error || !data) throw new Error(`Boîte d'envoi : ${error?.message ?? "enregistrement impossible"}`);

@@ -14,7 +14,7 @@ import type { ProfilCourant } from "./session";
  * personne connectée ; ce module ne fait que filtrer et assembler pour Pipeline, Pilotage et Point du mardi.
  */
 
-type Db = Awaited<ReturnType<typeof clientUtilisateur>>;
+export type Db = Awaited<ReturnType<typeof clientUtilisateur>>;
 export type Magasin = { id: string; code: string; nom: string };
 
 function lire<T>(r: { data: T | null; error: { message: string } | null }, quoi: string): T {
@@ -35,7 +35,7 @@ async function chargerMagasins(db: Db): Promise<Magasin[]> {
   return lire(await db.from("magasin").select("id, code, nom").order("nom"), "Magasins");
 }
 
-async function chargerAlertes(db: Db): Promise<Alerte[]> {
+export async function chargerAlertes(db: Db): Promise<Alerte[]> {
   const lignes = lire(await db.from("alertes").select("affaire_id, magasin_id, concepteur_id, regle, gravite, depuis, detail, montant_cts, echeance_id"), "Alertes");
   return trierAlertes(lignes as Alerte[]);
 }
@@ -161,19 +161,21 @@ export type Pilotage = Awaited<ReturnType<typeof chargerPilotage>>;
 export type ElementSemaine = { affaireId: string; libelle: string; quand: string };
 export type ColonneMardi = {
   magasin: Magasin;
+  potentiel: { cts: number; affaires: number };
   passee: { ventes: number; caHtCts: number; rdv: Record<"R1" | "R2" | "R3", number>; r3: number; vendues: number };
   aVenir: { r3: ElementSemaine[]; livraisons: ElementSemaine[]; poses: ElementSemaine[]; reglementsCts: number; nbReglements: number };
   alertes: AlerteVue[];
 };
 
-export async function chargerPointDuMardi() {
-  const db = await clientUtilisateur();
+/** `db` : client de l'utilisateur (page), ou client admin pour le digest du lundi des traitements de nuit. */
+export async function chargerPointDuMardi(dbFourni?: Db) {
+  const db = dbFourni ?? (await clientUtilisateur());
   const [aujourdhui, phases, magasins, alertes] = await Promise.all([
     adaptateurs().clock.today(), chargerPhases(db), chargerMagasins(db), chargerAlertes(db),
   ]);
   const fin = ajouterJours(aujourdhui, 6);
   const semaines = [...new Set([semaineIso(aujourdhui), semaineIso(fin)])];
-  const [periodes, ventes, rdv, transfo, r3, plannings, echeances, affaires] = await Promise.all([
+  const [periodes, ventes, rdv, transfo, r3, plannings, echeances, affaires, potentiel] = await Promise.all([
     db.from("kpi_periodes").select("code, debut, fin").eq("code", "semaine_precedente").single(),
     db.from("kpi_ventes").select("magasin_id, concepteur_id, nb_ventes, ca_ht_cts").eq("periode", "semaine_precedente"),
     db.from("kpi_rdv").select("magasin_id, concepteur_id, type, nb").eq("periode", "semaine_precedente"),
@@ -185,6 +187,7 @@ export async function chargerPointDuMardi() {
     db.from("echeance").select("montant_prevu_cts, vente:vente!inner(magasin_id)").is("recu_le", null).gt("montant_prevu_cts", 0)
       .gte("date_attendue", aujourdhui).lte("date_attendue", fin),
     db.from("affaire").select("id, libelle, etape_courante_code").in("statut", ["active", "gagnee"]).limit(2000),
+    db.from("kpi_potentiel").select("magasin_id, concepteur_id, nb_affaires, potentiel_ht_cts"),
   ]);
   const phaseDe = new Map(phases.flatMap((p) => p.etapes.map((e) => [e.code, p] as const)));
   const affaire = new Map(lire(affaires, "Affaires").map((a) => [a.id, a]));
@@ -203,8 +206,10 @@ export async function chargerPointDuMardi() {
     const ve = filtrer(lire(ventes, "KPI-01"), f);
     const pl = lesPlannings.filter((p) => p.vente.magasin_id === m.id);
     const ech = lesEcheances.filter((e) => e.vente.magasin_id === m.id);
+    const po = filtrer(lire(potentiel, "KPI-04"), f);
     return {
       magasin: m,
+      potentiel: { cts: po.reduce((s, p) => s + (p.potentiel_ht_cts ?? 0), 0), affaires: po.reduce((s, p) => s + (p.nb_affaires ?? 0), 0) },
       passee: {
         ventes: ve.reduce((s, v) => s + (v.nb_ventes ?? 0), 0),
         caHtCts: ve.reduce((s, v) => s + (v.ca_ht_cts ?? 0), 0),

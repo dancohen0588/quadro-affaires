@@ -12,3 +12,10 @@ export async function lireDecalageDemo(): Promise<number> {
   const decalage = Number(valeur?.decalage_secondes ?? 0);
   return Number.isFinite(decalage) ? decalage : 0;
 }
+
+/** Règle l'horloge de démo : décalage en secondes, ou null pour revenir à l'heure réelle (panneau Horloge, gérants). */
+export async function ecrireDecalageDemo(secondes: number | null): Promise<void> {
+  const valeur = secondes === null ? null : { decalage_secondes: Math.round(secondes) };
+  const { error } = await clientAdmin().from("parametre").update({ valeur }).eq("cle", "horloge_demo");
+  if (error) throw new Error(`Horloge de démo : ${error.message}`);
+}

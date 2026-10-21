@@ -275,14 +275,14 @@ isOneToOne: false
                   ]
                 },"mail_sortant": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"destinataire_email": string,"destinataire_id": string | null,"envoye_le": string | null,"genere_le": string,"html": string,"id": string,"objet": string,"type": string,"updated_at": string
+                    "cle": string | null,"created_at": string,"created_by": string | null,"destinataire_email": string,"destinataire_id": string | null,"envoye_le": string | null,"genere_le": string,"html": string,"id": string,"objet": string,"type": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"destinataire_email": string,"destinataire_id"?: string | null,"envoye_le"?: string | null,"genere_le"?: string,"html": string,"id"?: string,"objet": string,"type": string,"updated_at"?: string
+                    "cle"?: string | null,"created_at"?: string,"created_by"?: string | null,"destinataire_email": string,"destinataire_id"?: string | null,"envoye_le"?: string | null,"genere_le"?: string,"html": string,"id"?: string,"objet": string,"type": string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"destinataire_email"?: string,"destinataire_id"?: string | null,"envoye_le"?: string | null,"genere_le"?: string,"html"?: string,"id"?: string,"objet"?: string,"type"?: string,"updated_at"?: string
+                    "cle"?: string | null,"created_at"?: string,"created_by"?: string | null,"destinataire_email"?: string,"destinataire_id"?: string | null,"envoye_le"?: string | null,"genere_le"?: string,"html"?: string,"id"?: string,"objet"?: string,"type"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -495,14 +495,14 @@ isOneToOne: false
                   ]
                 },"tache": {
                   Row: {
-                    "affaire_id": string | null,"assignee_id": string,"client_id": string | null,"created_at": string,"created_by": string | null,"detail": string | null,"echeance": string | null,"etape_instance_id": string | null,"fait_le": string | null,"fait_par": string | null,"id": string,"modele_code": string | null,"optionnelle": boolean,"origine": string,"statut": string,"titre": string,"updated_at": string
+                    "affaire_id": string | null,"assignee_id": string,"cle": string | null,"client_id": string | null,"created_at": string,"created_by": string | null,"detail": string | null,"echeance": string | null,"etape_instance_id": string | null,"fait_le": string | null,"fait_par": string | null,"id": string,"modele_code": string | null,"optionnelle": boolean,"origine": string,"statut": string,"titre": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "affaire_id"?: string | null,"assignee_id": string,"client_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"detail"?: string | null,"echeance"?: string | null,"etape_instance_id"?: string | null,"fait_le"?: string | null,"fait_par"?: string | null,"id"?: string,"modele_code"?: string | null,"optionnelle"?: boolean,"origine"?: string,"statut"?: string,"titre": string,"updated_at"?: string
+                    "affaire_id"?: string | null,"assignee_id": string,"cle"?: string | null,"client_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"detail"?: string | null,"echeance"?: string | null,"etape_instance_id"?: string | null,"fait_le"?: string | null,"fait_par"?: string | null,"id"?: string,"modele_code"?: string | null,"optionnelle"?: boolean,"origine"?: string,"statut"?: string,"titre": string,"updated_at"?: string
                   }
                   Update: {
-                    "affaire_id"?: string | null,"assignee_id"?: string,"client_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"detail"?: string | null,"echeance"?: string | null,"etape_instance_id"?: string | null,"fait_le"?: string | null,"fait_par"?: string | null,"id"?: string,"modele_code"?: string | null,"optionnelle"?: boolean,"origine"?: string,"statut"?: string,"titre"?: string,"updated_at"?: string
+                    "affaire_id"?: string | null,"assignee_id"?: string,"cle"?: string | null,"client_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"detail"?: string | null,"echeance"?: string | null,"etape_instance_id"?: string | null,"fait_le"?: string | null,"fait_par"?: string | null,"id"?: string,"modele_code"?: string | null,"optionnelle"?: boolean,"origine"?: string,"statut"?: string,"titre"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {

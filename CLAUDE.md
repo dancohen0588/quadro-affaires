@@ -90,6 +90,15 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Lecture : src/server/indicateurs.ts (chargerPipeline, chargerPilotage, chargerPointDuMardi) ; /point-du-mardi vit hors du groupe (app) pour le grand format.
 - Tests pgTAP d'indicateurs : fixer aujourd'hui par horloge_demo = date visée − now() (now() est figé dans la transaction).
 
+## Choix techniques (session 4.2)
+- Traitements de nuit : traitementsDeNuit(jour, base) dans src/server/nuit.ts (clé secrète), appelé par /api/cron/nuit (Vercel Cron, Bearer CRON_SECRET, 4 h 30 UTC) et par l'horloge de démo pour chaque nuit franchie.
+- Idempotence : chaque tâche ou mail créé par la nuit porte une clé unique (tache.cle, mail_sortant.cle) ; rejouer un jour ne crée rien de plus. Une tâche à clé ne compte pas comme activité (RG-27 reste visible).
+- Qui est prévenu, quelles tâches (RG-20, RG-22, RG-23, RG-32) : src/lib/rules/alertes.ts ; les alertes restent définies par la vue SQL.
+- Digests : modèles purs src/lib/mails/digests.ts (sections du gabarit, 8 lignes au plus par section).
+- Horloge de démo : page /horloge (gérants, mode démo), calculs purs src/lib/horloge.ts, écriture par ecrireDecalageDemo ; chaque nuit est rejouée à 6 h 30 du jour franchi, « Revenir à aujourd'hui » ne rejoue rien.
+- Boîte d'envoi : /boite-envoi, aperçu dans une iframe sandbox (srcDoc) ; liens Horloge et Boîte d'envoi dans le bandeau de démo, qui affiche aussi la date simulée.
+- e2e : zz-horloge.spec.ts tourne en dernier (il avance l'horloge, crée tâches et mails, puis la remet à l'heure).
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.
