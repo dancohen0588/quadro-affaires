@@ -139,7 +139,7 @@ export default async function Page({ searchParams }: PageProps<"/pipeline">) {
           </table>
         </div>
       ) : (
-        <div className="grid auto-cols-[minmax(205px,1fr)] grid-flow-col gap-2.5 overflow-x-auto pb-2">
+        <div className="relative grid auto-cols-[minmax(205px,1fr)] grid-flow-col gap-2.5 overflow-x-auto pb-2">
           {colonnes.map((c) => {
             const id = `phase-${c.phase.code}`;
             return (

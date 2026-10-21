@@ -114,6 +114,13 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Un fichier lu à l'exécution hors de src (docs/import/affaires-exemple.csv) est déclaré dans outputFileTracingIncludes.
 - e2e : zy-admin-import.spec.ts tourne avant zz-horloge (il importe et réassigne).
 
+## Choix techniques (session 5.3)
+- Répétition : e2e/demo.spec.ts rejoue le scénario 15.5 dans l'ordre (séquences 1 à 10) puis vérifie l'affichage à 1280 et 1024 px ; projet Playwright « demo », lancé par pnpm e2e:demo sur une base tout juste remise (pnpm seed:demo). pnpm e2e (projet chromium-1280) ne l'inclut pas ; la CI enchaîne e2e, seed, e2e:demo.
+- Le scénario ne dépend que de CAS_DEMO et de dates calculées depuis le jour du lancement ; il finit par « Revenir à aujourd'hui ».
+- Un état n'est jamais donné par la couleur seule (ENF-04) : un retard s'écrit (« En retard · depuis le… »).
+- Un conteneur qui défile (overflow-x-auto) et contient des sr-only est en position relative, sinon la page entière déborde.
+- Changer de personnage dans un même test : vider les cookies avant seConnecterEn.
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.

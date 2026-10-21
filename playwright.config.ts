@@ -21,6 +21,8 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-1280",
+      // La répétition du scénario de démo (demo.spec.ts) a son propre projet : elle part d'un seed tout frais.
+      testIgnore: /demo\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 }, // largeur de référence (ENF-02)
@@ -28,6 +30,16 @@ export default defineConfig({
         launchOptions: process.env.PW_CHROMIUM_EXECUTABLE
           ? { executablePath: process.env.PW_CHROMIUM_EXECUTABLE }
           : {},
+      },
+    },
+    {
+      // pnpm seed:demo puis pnpm e2e:demo : le scénario de la section 15.5 de bout en bout (session 5.3).
+      name: "demo",
+      testMatch: /demo\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 800 },
+        launchOptions: process.env.PW_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PW_CHROMIUM_EXECUTABLE } : {},
       },
     },
   ],

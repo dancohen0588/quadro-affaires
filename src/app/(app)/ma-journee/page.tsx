@@ -97,7 +97,7 @@ export default async function MaJournee({ searchParams }: PageProps<"/ma-journee
                     <li key={`${e.affaireId}-${e.depuis}`} className="flex flex-wrap items-center gap-3 py-2.5 text-[15px]">
                       <Link href={`/affaires/${e.affaireId}`} className="min-w-0 flex-1 font-semibold text-encre underline-offset-2 hover:underline">{e.libelle}</Link>
                       {e.detail && <span className="text-[14px] text-muted-foreground">{e.detail}</span>}
-                      <Etat ton={e.enRetard ? "retard" : "neutre"}>depuis le {dateCourte(e.depuis, annee)}</Etat>
+                      <Etat ton={e.enRetard ? "retard" : "neutre"}>{e.enRetard ? "En retard · " : ""}depuis le {dateCourte(e.depuis, annee)}</Etat>
                     </li>
                   ))}
                 </ul>
