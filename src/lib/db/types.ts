@@ -773,10 +773,19 @@ isOneToOne: false
 "creer_vente":
 { Args: { "affaires": Json,"echeances": Json,"planning": Json,"vente": Json }; Returns: string
                            },
+"desactiver_profil":
+{ Args: { "p_profil": string,"p_repreneur": string }; Returns: Json
+                           },
 "identite_client":
 { Args: { "client_id": string }; Returns: {
               "nom": string,"prenom": string,"raison_sociale": string,"type": string
             }[]
+                           },
+"importer_affaire":
+{ Args: { "p": Json }; Returns: string
+                           },
+"modifier_profil":
+{ Args: { "p_magasins": (string)[],"p_profil": string,"p_role": string,"p_rubriques": (string)[] }; Returns: undefined
                            },
 "rechercher_clients":
 { Args: { "q": string }; Returns: {

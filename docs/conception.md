@@ -804,6 +804,8 @@ Précisions (session 3.2) :
 - EF-103 Modèle de process : liste des versions, duplication, éditeur par étape (tâches, assigné, échéance, optionnelle, documents, issues), validation Zod, publication ; seules les nouvelles affaires prennent la nouvelle version.
 - EF-104 Journal consultable et filtrable.
 
+Précisions (session 5.2) : administration légère livrée en J5 — utilisateurs (lecture, rôle, magasins, rubriques, désactivation avec réassignation des affaires en cours et des tâches ouvertes, réactivation ; un référent doit d'abord être remplacé), paramètres (seuils, listes, gérants référents), version de process en lecture seule. L'invitation passe par la connexion Microsoft 365 (B1) ; l'éditeur de process (EF-103) et le journal (EF-104) attendent B6.
+
 ---
 
 ## 10. Indicateurs de pilotage
@@ -899,6 +901,12 @@ magasin;concepteur_email;client_type;client_nom;client_prenom;raison_sociale;tel
 ```
 
 Le script positionne l'affaire à `etape_code`, marque les étapes antérieures `faite` sans générer leurs tâches, crée la vente et l'échéancier si une date de signature est présente. Mode « essai » sans écriture ; rapport des lignes rejetées avec motif.
+
+Précisions (session 5.2) :
+- l'import est dans Administration › Import de reprise, réservé aux gérants ; fichier d'exemple `docs/import/affaires-exemple.csv` (8 affaires fictives de R1 à SOLDE) ;
+- dates au format AAAA-MM-JJ ou JJ/MM/AAAA, montants « 12 400,00 », semaine « 2026-S44 » ou « 44/2026 » ; `etape_code` doit appartenir au chemin principal ; au-delà de l'acompte 1, la date de réception de l'acompte 1 est exigée (RG-01) ;
+- chaque ligne est écrite tout ou rien ; une affaire déjà présente (même magasin, contremarque et projet) est rejetée, un client connu (même nom et téléphone dans le magasin) est repris ;
+- les RDV R1, R2, R3 datés sont créés (faits s'ils sont passés), le planning est confirmé si la semaine de livraison et la date de pose sont données ; les clients importés ont la source « reprise ».
 
 ### 13.2 Exports Gesteos (B4)
 
