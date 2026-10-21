@@ -10,7 +10,7 @@ import {
 
 /**
  * Implémentations de démonstration (section 5.4).
- * Les dépendances à la base (`mail_sortant`, `rdv`, `parametre.horloge_demo`) sont injectées :
+ * Les dépendances à la base (`mail_sortant`, `rdv`, décalage `parametre.horloge_demo`) sont injectées :
  * elles sont branchées quand les tables existent (session 1.3, J3, J4), sans toucher au code métier.
  */
 

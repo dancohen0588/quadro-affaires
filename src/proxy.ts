@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEMO_ACCESS_COOKIE, decideAccess } from "@/lib/demo-access";
 import { readAppMode, readDemoAccessCode } from "@/lib/env";
+import { rafraichirSession } from "@/lib/supabase/session-proxy";
 
 // Next.js 16 : l'ancien « middleware » s'appelle désormais « proxy » (docs/01-app/01-getting-started/16-proxy.md).
 // Vérification optimiste du code d'accès de la démo ; les droits réels restent dans la base (RLS).
@@ -15,7 +16,7 @@ export async function proxy(request: NextRequest) {
     isDevelopment: process.env.NODE_ENV === "development",
   });
 
-  if (decision.kind === "allow") return NextResponse.next();
+  if (decision.kind === "allow") return rafraichirSession(request);
   if (decision.kind === "redirect") return NextResponse.redirect(new URL(decision.to, request.url));
   return new NextResponse(
     "Démonstration non configurée : la variable DEMO_ACCESS_CODE est absente.",

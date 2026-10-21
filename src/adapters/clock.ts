@@ -24,18 +24,19 @@ export class SystemClock implements Clock {
 }
 
 /**
- * Horloge de démo : renvoie la date simulée si elle existe, l'heure système sinon.
- * La date simulée vit dans `parametre.horloge_demo`, lue aussi par `app_now()` côté SQL (section 5.4),
- * pour que l'interface, les triggers et les indicateurs avancent ensemble.
+ * Horloge de démo : heure système décalée de `parametre.horloge_demo.decalage_secondes`.
+ * Même règle que `app_now()` côté SQL (section 5.4) : l'interface, les triggers et les indicateurs
+ * avancent ensemble, et le temps continue de s'écouler pendant la démo.
  */
 export class DemoClock implements Clock {
   constructor(
-    private readonly lireDateSimulee: () => Promise<Date | null>,
+    private readonly lireDecalageSecondes: () => Promise<number>,
     private readonly systeme: Clock = new SystemClock(),
   ) {}
 
   async now(): Promise<Date> {
-    return (await this.lireDateSimulee()) ?? this.systeme.now();
+    const [reel, decalage] = await Promise.all([this.systeme.now(), this.lireDecalageSecondes()]);
+    return new Date(reel.getTime() + decalage * 1000);
   }
 
   async today(): Promise<DateMetier> {

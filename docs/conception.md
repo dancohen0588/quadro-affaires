@@ -215,7 +215,7 @@ Chaque outil externe est caché derrière une interface (un « adaptateur »). L
 | `Mailer` | Boîte d'envoi interne : chaque mail est enregistré dans `mail_sortant` et lisible dans l'outil, rendu identique au mail réel | Resend (B2) ; la boîte d'envoi reste comme journal |
 | `FileStore` | PCloud simulé dans Supabase Storage (bucket `pcloud-demo`) : même arborescence, même renommage, écran « PCloud (simulé) » | API PCloud (B3) |
 | `CalendarSource` | Les RDV saisis dans l'outil (table `rdv`) | Agendas Outlook via Microsoft Graph (B5) |
-| `Clock` | Horloge de démo : date simulée stockée dans `parametre.horloge_demo`, réglable par un gérant ; chaque avance exécute les traitements de nuit pour les jours franchis | Heure système, Europe/Paris |
+| `Clock` | Horloge de démo : heure réelle décalée du réglage `parametre.horloge_demo` (`{"decalage_secondes": N}`), réglable par un gérant ; le temps continue de s'écouler ; chaque avance exécute les traitements de nuit pour les jours franchis | Heure système, Europe/Paris |
 | Traitements de nuit | Déclenchés par l'horloge de démo ou un bouton | Vercel Cron |
 | Import Gesteos | Fichiers CSV d'exemple au format supposé | Exports réels (B4) |
 
@@ -227,7 +227,7 @@ Règles du mode démo :
 - la commande `pnpm seed:demo` remet la base dans l'état de départ du scénario de démonstration (section 15.5) ;
 - les droits (RLS) sont les mêmes qu'en production : la démo montre le vrai cloisonnement par magasin.
 
-Horloge côté base : la date simulée doit être vue par le SQL aussi, sinon les triggers et les vues d'indicateurs restent à la date réelle pendant que l'interface avance. Deux fonctions SQL, `app_now()` (timestamptz) et `app_today()` (date, Europe/Paris), renvoient la date simulée si `parametre.horloge_demo` est renseigné, l'heure système sinon. Elles remplacent `now()` et `current_date` dans tous les triggers, vues et fonctions métier. L'adaptateur `Clock` côté TypeScript lit la même valeur.
+Horloge côté base : la date simulée doit être vue par le SQL aussi, sinon les triggers et les vues d'indicateurs restent à la date réelle pendant que l'interface avance. Deux fonctions SQL du schéma `prive`, `app_now()` (timestamptz) et `app_today()` (date, Europe/Paris), renvoient l'heure système décalée de `parametre.horloge_demo.decalage_secondes` (zéro si le réglage est nul). Un décalage plutôt qu'une date figée : deux écritures successives gardent leur ordre pendant la démo. Elles remplacent `now()` et `current_date` dans tous les triggers, vues et fonctions métier. L'adaptateur `Clock` côté TypeScript lit la même valeur.
 
 ---
 
@@ -474,7 +474,7 @@ Clés initiales :
 | `gerant_bpa` | profil de Benjamin |
 | `gerant_finance` | profil de Jean |
 | `responsable_r4` | profil d'Elsie |
-| `horloge_demo` | nul ; date et heure simulées en mode démo (lues par `app_now()`), toujours nul en production |
+| `horloge_demo` | nul ; en mode démo `{"decalage_secondes": N}`, décalage lu par `app_now()` et l'adaptateur `Clock` ; toujours nul en production |
 
 ---
 
@@ -819,7 +819,7 @@ Toutes les notifications existent aussi dans l'interface (compteur dans la navig
 | Importer des données | Oui | Non | Non |
 | Administration | Oui | Non | Non |
 
-Implémentation : fonctions SQL `auth_role()`, `auth_magasins()`, `auth_rubriques()`, `auth_est_admin()` utilisées par les politiques RLS. Chaque politique a un test pgTAP dans `supabase/tests`, exécuté par la CI sur la base éphémère (section 5.3).
+Implémentation : fonctions SQL `prive.auth_role()`, `prive.auth_magasins()`, `prive.auth_rubriques()`, `prive.auth_est_admin()` utilisées par les politiques RLS. Elles vivent dans le schéma `prive`, que l'API REST n'expose pas. Chaque politique a un test pgTAP dans `supabase/tests`, exécuté par la CI sur la base éphémère (section 5.3).
 
 ---
 

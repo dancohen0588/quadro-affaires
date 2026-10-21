@@ -59,8 +59,11 @@ jobs:
         run: pnpm exec supabase stop --no-backup
 
   e2e:
-    name: Parcours Playwright
+    name: Parcours Playwright (Supabase local)
     runs-on: ubuntu-latest
+    env:
+      # Valeur de test uniquement : la base locale du runner est détruite à la fin du job.
+      DEMO_PERSONA_PASSWORD: mot-de-passe-ci-e2e-0123456789
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -69,6 +72,16 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Démarrer Supabase (base, authentification, API)
+        run: pnpm exec supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit,realtime,storage-api,supavisor,postgres-meta
+      - name: Exposer l'URL et les clés de la base locale
+        run: |
+          pnpm exec supabase status -o json > /tmp/supabase.json
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r .API_URL /tmp/supabase.json)" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(jq -r .PUBLISHABLE_KEY /tmp/supabase.json)" >> "$GITHUB_ENV"
+          echo "SUPABASE_SECRET_KEY=$(jq -r .SECRET_KEY /tmp/supabase.json)" >> "$GITHUB_ENV"
+      - name: Données de démo (personnages)
+        run: pnpm seed:demo
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm build
       - run: pnpm e2e
@@ -78,6 +91,9 @@ jobs:
           name: rapport-playwright
           path: playwright-report/
           retention-days: 7
+      - name: Arrêter Supabase
+        if: always()
+        run: pnpm exec supabase stop --no-backup
 
   migrations:
     name: Appliquer les migrations au projet distant

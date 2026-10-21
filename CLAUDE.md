@@ -11,7 +11,7 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - RLS obligatoire sur chaque table ; tester les droits en pgTAP dans supabase/tests.
 - Montants en centimes (integer), dates en Europe/Paris.
 - Tout outil externe passe par src/adapters (AuthAdapter, Mailer, FileStore, CalendarSource, Clock) ; jamais d'appel direct depuis le code métier.
-- « Aujourd'hui » vient de Clock côté TypeScript et de app_now() / app_today() côté SQL ; jamais now() ni current_date dans le code métier.
+- « Aujourd'hui » vient de Clock côté TypeScript et de prive.app_now() / prive.app_today() côté SQL ; jamais now() ni current_date dans le code métier.
 - Une affaire peut avoir plusieurs étapes ouvertes (section 7.4) ; etape_courante_code sert à l'affichage, jamais à la logique.
 - Aucune donnée réelle de client dans le dépôt ni dans la base de démo.
 - Ne pas ajouter de dépendance sans le justifier dans la PR.
@@ -28,6 +28,15 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - cacheComponents désactivé : rendu dynamique classique, toutes les pages dépendent de l'utilisateur.
 - Polices servies depuis src/app/fonts (next/font/local), jamais Google Fonts.
 - Code d'accès de la démo vérifié dans src/proxy.ts (src/lib/demo-access.ts).
+
+## Choix techniques (session 1.2)
+- Session lue par src/server/session.ts (lireSession), gardes dans src/server/garde.ts (exigerProfil, exigerGerant, exigerModeDemo).
+- Clé secrète uniquement via clientAdmin() (src/lib/supabase/server.ts), jamais dans un composant client.
+- Horloge de démo = décalage en secondes (parametre.horloge_demo), même règle en SQL (app_now) et en TypeScript (DemoClock).
+- Jointures PostgREST depuis profil : préciser la relation (`profil_magasin!profil_magasin_profil_id_fkey(...)`), car created_by crée une seconde clé étrangère vers profil.
+- Tests pgTAP : se faire passer pour un utilisateur avec `set local role authenticated` et `set local request.jwt.claims`.
+- Fonctions SECURITY DEFINER (auth_*, app_now…) dans le schéma `prive`, non exposé par l'API REST ; jamais d'EXECUTE pour anon.
+- Vérifier les alertes Supabase (sécurité, performance) après chaque migration appliquée au projet distant.
 
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.

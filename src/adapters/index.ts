@@ -20,7 +20,7 @@ export function creerAdaptateurs(mode: AppMode): Adaptateurs {
       mailer: new DemoMailer(boite.enregistrer),
       fileStore: demoFileStore,
       calendar: new DemoCalendarSource(async () => []),
-      clock: new DemoClock(async () => null),
+      clock: new DemoClock(async () => 0),
     };
   }
 
