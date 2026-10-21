@@ -206,7 +206,7 @@ test("10. Jean : seuils, utilisateurs, version de process ; puis retour à l'heu
 test("affichage à 1280 et 1024 px : aucun défilement horizontal de la page", async ({ page }) => {
   const ecrans: [string, string][] = [
     ["Manon", "/ma-journee"], ["Manon", "/affaires"], ["Manon", "/pipeline"], ["Valentin", "/planning"], ["Jean", "/reglements"],
-    ["Jean", "/pilotage"], ["Jean", "/boite-envoi"], ["Jean", "/admin"], ["Jean", "/admin?onglet=parametres"],
+    ["Jean", "/pilotage"], ["Jean", "/boite-envoi"], ["Jean", "/admin"], ["Jean", "/admin?onglet=magasins"], ["Jean", "/admin?onglet=parametres"],
   ];
   let connecte = "";
   for (const [qui, chemin] of ecrans) {

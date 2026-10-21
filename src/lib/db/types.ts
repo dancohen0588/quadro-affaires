@@ -770,6 +770,9 @@ isOneToOne: false
 "creer_affaires":
 { Args: { "affaires": Json,"client_id": string }; Returns: (string)[]
                            },
+"creer_profil":
+{ Args: { "p_email": string,"p_id": string,"p_initiales": string,"p_magasins": (string)[],"p_nom": string,"p_prenom": string,"p_role": string,"p_rubriques": (string)[] }; Returns: string
+                           },
 "creer_vente":
 { Args: { "affaires": Json,"echeances": Json,"planning": Json,"vente": Json }; Returns: string
                            },

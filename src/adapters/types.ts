@@ -86,11 +86,34 @@ export interface CalendarSource {
 
 // ── AuthAdapter ──────────────────────────────────────────────────────────────────────────────────
 
+export interface NouveauCompte {
+  email: string;
+  prenom: string;
+  nom: string;
+}
+
 export interface AuthAdapter {
   /** `personnage` en démo (page « Choisir un personnage »), `microsoft` en production (B1). */
   readonly methode: "personnage" | "microsoft";
   /** Chemin de la page de connexion propre à la méthode. */
   readonly cheminConnexion: string;
+  /**
+   * Prépare le compte de connexion d'un nouvel utilisateur (EF-100) et renvoie son identifiant, qui sera celui du profil.
+   * Démo : compte au mot de passe commun des personnages, utilisable aussitôt depuis « Choisir un personnage ».
+   * B1 : compte sans mot de passe, rattaché à la première connexion Microsoft 365 par l'adresse.
+   * Lève CompteExistantError si l'adresse a déjà un compte.
+   */
+  creerCompte(compte: NouveauCompte): Promise<{ id: string }>;
+  /** Annule un compte tout juste créé dont le profil a été refusé (tout ou rien). On ne retire jamais un utilisateur : on le désactive. */
+  annulerCompte(id: string): Promise<void>;
+}
+
+/** L'adresse a déjà un compte de connexion. */
+export class CompteExistantError extends Error {
+  constructor(email: string) {
+    super(`Un compte existe déjà pour ${email}.`);
+    this.name = "CompteExistantError";
+  }
 }
 
 export interface Adaptateurs {
