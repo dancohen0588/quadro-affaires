@@ -60,6 +60,13 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Jeu de démo : chaque affaire active est menée à son étape par rejeu du moteur (src/lib/demo/rejouer.ts) ; seules les tâches des étapes ouvertes sont gardées.
 - Règles de l'affaire (RG-02, RG-03, RG-08) : src/lib/rules/affaire.ts. Une affaire insérée fournit derniere_activite_at (colonne sans défaut, RG-09).
 
+## Choix techniques (session 2.2)
+- Fiche affaire : src/app/(app)/affaires/[id]/page.tsx ; données par chargerFiche (src/server/fiche-affaire.ts) ; blocs dans src/components/affaire.
+- Modèles de vue purs et testés : src/lib/affaire/fiche.ts (process en 6 phases, documents attendus, intervenants), src/lib/affaire/historique.ts (journal en langage clair, EF-40).
+- Formats d'affichage dans src/lib/format.ts (euros depuis les centimes, dates courtes, instantParis) ; noms attendus des documents dans src/lib/rules/documents.ts.
+- Fenêtres modales : src/components/ui/dialog.tsx (Base UI). Champs de formulaire natifs (select, radio, case à cocher) stylés à la charte.
+- Tests e2e de la fiche : mode série, ils supposent une base tout juste remise par pnpm seed:demo.
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.

@@ -13,7 +13,7 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
     environment: "node",
     coverage: {
-      include: ["src/lib/process/**", "src/lib/rules/**"],
+      include: ["src/lib/process/**", "src/lib/rules/**", "src/lib/affaire/**", "src/lib/format.ts"],
       exclude: ["**/*.test.ts"],
       thresholds: { lines: 90, functions: 90, branches: 90, statements: 90 }, // ENF-10
     },

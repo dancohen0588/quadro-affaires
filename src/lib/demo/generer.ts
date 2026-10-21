@@ -9,6 +9,7 @@
  * Fonction pure : renvoie des lignes au format des tables, l'écriture en base est faite par le seed.
  */
 import type { Database } from "../db/types";
+import { instantParis } from "../format";
 import { creerMoteur } from "../process/moteur";
 import type { ProcessDefinition, Role } from "../process/schema";
 import { indexerEtapes } from "../process/valider";
@@ -92,17 +93,6 @@ const PROJETS = [
   ["salle de bain", 5, 4_000, 10_000],
 ] as const;
 type Projet = (typeof PROJETS)[number][0];
-
-/** Horodatage ISO d'un jour à une heure de Paris (heure d'été ou d'hiver). */
-export function instantParis(date: DateIso, heure = "10:00"): string {
-  const midi = new Date(`${date}T12:00:00Z`);
-  const decalage =
-    new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", timeZoneName: "longOffset" })
-      .formatToParts(midi)
-      .find((p) => p.type === "timeZoneName")
-      ?.value.replace("GMT", "") || "+00:00";
-  return `${date}T${heure}:00${decalage}`;
-}
 
 const MOTIFS_R3 = [["prix", 35], ["concurrent", 20], ["réflexion longue", 20], ["délai", 10], ["injoignable", 10], ["autre", 5]] as const;
 const SOURCES = [["passage", 30], ["recommandation", 20], ["internet", 25], ["réseaux sociaux", 10], ["salon", 5], ["autre", 10]] as const;
