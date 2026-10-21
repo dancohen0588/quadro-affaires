@@ -77,3 +77,23 @@ export function erreursEcheancier(lignes: readonly LigneEcheancier[], montantTtc
   }
   return erreurs;
 }
+
+export type EtatEcheance = "recue" | "partielle" | "en_retard" | "attendue" | "a_planifier";
+
+/**
+ * État d'une échéance (EF-52, EF-53) : reçue, partiellement reçue (montant inférieur au prévu),
+ * en retard (date attendue passée), attendue, ou à planifier (date encore inconnue, RG-12).
+ */
+export function etatEcheance(
+  e: { montantPrevuCts: number; montantRecuCts: number | null; recuLe: DateIso | null; dateAttendue: DateIso | null },
+  aujourdhui: DateIso,
+): EtatEcheance {
+  if (e.recuLe) return (e.montantRecuCts ?? 0) < e.montantPrevuCts ? "partielle" : "recue";
+  if (!e.dateAttendue) return "a_planifier";
+  return e.dateAttendue < aujourdhui ? "en_retard" : "attendue";
+}
+
+/** RG-15 : toutes les échéances d'une vente sont reçues (au moins partiellement). */
+export function toutesRecues(lignes: readonly { recuLe: DateIso | null }[]): boolean {
+  return lignes.length > 0 && lignes.every((l) => !!l.recuLe);
+}

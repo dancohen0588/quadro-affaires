@@ -9,6 +9,7 @@ import { ajouterJours } from "@/lib/rules/calendrier";
 import type { Resultat } from "@/lib/process/moteur";
 import { clientUtilisateur } from "@/lib/supabase/server";
 import { exigerProfil } from "@/server/garde";
+import { MESSAGE_VENTE } from "@/server/fiche-affaire";
 import { appliquerEffets, chargerAffaireProcess, type AffaireProcess } from "@/server/process";
 
 /**
@@ -56,6 +57,8 @@ export async function validerEtape(brut: EntreeValidation): Promise<ResultatActi
   const lu = entreeValidation.safeParse(brut);
   if (!lu.success) return { ok: false, message: "Demande de validation invalide." };
   const { affaireId, ...v } = lu.data;
+  // RG-08 : l'étape VENTE se valide en créant la vente (ventes/actions.ts), jamais seule.
+  if (v.etape === "VENTE") return { ok: false, message: MESSAGE_VENTE };
   return executer(affaireId, (a, moment) => a.moteur.valider(a.etat, { ...moment, ...v, dates: a.dates }));
 }
 

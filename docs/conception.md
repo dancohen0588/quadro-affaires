@@ -777,6 +777,15 @@ Précisions (session 2.2) : la réassignation transfère aussi à la nouvelle pe
 - EF-72 Saisie d'une commande autre fournisseur : fournisseur, date, AR, délai.
 - EF-73 File « BPA à donner » pour Benjamin, triée par ancienneté de la confirmation.
 
+Précisions (session 3.2) :
+- la vente se crée depuis une affaire en présentation (R3) ou en vente, avec les autres affaires actives du même client ; `public.creer_vente` écrit d'un bloc la vente, l'échéancier, le passage des affaires en `gagnee`, la validation de l'étape VENTE (et de la présentation si besoin), l'ouverture de l'acompte 1, la demande de planning et la tâche du gérant logistique ; l'étape VENTE ne se valide jamais seule ;
+- les tâches de l'étape VENTE accomplies par la création elle-même (« Créer la vente », « Saisir les dates souhaitées ») sont marquées faites (effet `faire_taches`) ; les autres sont annulées et récapitulées (RG-05) ;
+- l'échéancier se modifie tant que les lignes ne sont pas reçues ; aucune ligne n'est supprimée (6.1), une ligne inutile passe à 0 ;
+- une réception fait la tâche « Vérifier la réception » correspondante ; l'acompte 1 crée le rappel de commission (RG-14) ; quand tout est reçu, la tâche et le mail de facture récapitulative partent chez le gérant finance (RG-15) ;
+- le gérant confirme le planning ou propose d'autres dates (statut `decalee`, dates proposées dans les colonnes « confirmées ») ; seule une confirmation recale l'acompte 2 (lundi de la semaine de livraison) et le solde (date de pose), RG-12 ;
+- la file « BPA à donner » (EF-73) part des commandes AGEM confirmées sans BPA, triées par date de confirmation, en retard au-delà de `retard_bpa_jours_ouvres` ;
+- notifications de démo : mails enregistrés dans `mail_sortant` (boîte d'envoi, écran en J4) et compteurs de la navigation (tâches du jour, demandes de planning en attente pour les gérants).
+
 ### 9.8 Pipeline
 - EF-80 Kanban à 6 colonnes (phases), une carte par affaire active : libellé, étape courante, concepteur, montant, prochain jalon, point d'état (actif, attente, retard).
 - EF-81 Filtres magasin, concepteur, « inactives seulement ».

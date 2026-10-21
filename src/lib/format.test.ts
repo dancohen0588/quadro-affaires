@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dateCourte, depuis, euros, heure, instantParis, jourDe, semaineCourte } from "./format";
+import { centimesDepuis, champDepuisSemaine, dateCourte, depuis, euros, heure, instantParis, jourDe, semaineCourte, semaineDepuisChamp } from "./format";
 
 const nb = (s: string) => s.replace(/ /g, " ");
 
@@ -42,5 +42,22 @@ describe("formats d'affichage", () => {
 
   it("raccourcit une semaine ISO", () => {
     expect(semaineCourte("2026-S41")).toBe("S41");
+  });
+
+  it("lit un montant saisi en euros", () => {
+    expect(centimesDepuis("12 400,50")).toBe(1240050);
+    expect(centimesDepuis("12400.5")).toBe(1240050);
+    expect(centimesDepuis("12\u00a0400 €")).toBe(1240000);
+    expect(centimesDepuis("0,05")).toBe(5);
+    expect(centimesDepuis("12,345")).toBeNull();
+    expect(centimesDepuis("-3")).toBeNull();
+    expect(centimesDepuis("")).toBeNull();
+  });
+
+  it("convertit les semaines du champ HTML", () => {
+    expect(semaineDepuisChamp("2026-W47")).toBe("2026-S47");
+    expect(semaineDepuisChamp("2026-47")).toBeNull();
+    expect(champDepuisSemaine("2026-S47")).toBe("2026-W47");
+    expect(champDepuisSemaine(null)).toBe("");
   });
 });

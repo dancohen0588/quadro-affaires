@@ -9,6 +9,8 @@ import { CloreAffaire } from "@/components/affaire/clore-affaire";
 import Link from "next/link";
 import { TimelineProcess } from "@/components/affaire/timeline-process";
 import { ValiderEtape } from "@/components/affaire/valider-etape";
+import { BlocCommandes } from "@/components/commandes/bloc-commandes";
+import { BlocVente } from "@/components/vente/bloc-vente";
 import { dateCourte, depuis, euros, semaineCourte } from "@/lib/format";
 import { chargerFiche, type Fiche } from "@/server/fiche-affaire";
 import { exigerProfil } from "@/server/garde";
@@ -123,6 +125,10 @@ export default async function FicheAffaire({ params }: PageProps<"/affaires/[id]
             phases={f.process.phases} nom={f.process.nom} faites={f.process.faites} total={f.process.total}
             affaireId={f.id} modifiable={f.peutModifier} blocages={blocages} annee={annee}
           />
+          <BlocVente f={f} annee={annee} />
+          {(f.vente || f.commandes.length > 0) && (
+            <BlocCommandes affaireId={f.id} commandes={f.commandes} estGerant={f.estGerant} modifiable={f.peutModifier} annee={annee} />
+          )}
         </div>
         <div className="flex min-w-0 flex-col gap-5">
           <DocumentsAttendus documents={f.documents} annee={annee} />

@@ -101,12 +101,21 @@ export async function chargerJournee(moi: ProfilCourant): Promise<Journee> {
     return (data ?? []) as unknown as { etape_code: string; debut_at: string; affaire: { id: string; libelle: string; statut: string } }[];
   };
   if (roles.has("gerant_bpa")) {
-    const bpa = await etapesOuvertes(["BPA"]);
+    // EF-73 : commandes AGEM confirmées sans BPA, de la plus ancienne confirmation à la plus récente (RG-21).
+    const { data: bpa } = await db.from("commande_fournisseur")
+      .select("confirmation_recue_le, bpa_version, affaire:affaire!inner(id, libelle, statut)")
+      .eq("fournisseur", "AGEM").not("confirmation_recue_le", "is", null).is("bpa_donne_le", null)
+      .order("confirmation_recue_le");
+    type BpaLu = { confirmation_recue_le: string; bpa_version: string | null; affaire: { id: string; libelle: string; statut: string } };
     files.push({
       titre: "BPA à donner", vide: "Aucun BPA en attente.",
-      elements: bpa.map((e) => {
-        const jours = joursOuvresEcoules(jourDe(e.debut_at), aujourdhui);
-        return { affaireId: e.affaire.id, libelle: e.affaire.libelle, depuis: e.debut_at, detail: `${jours} j ouvré${jours > 1 ? "s" : ""}`, enRetard: jours > 3 };
+      elements: ((bpa ?? []) as unknown as BpaLu[]).filter((c) => c.affaire.statut === "gagnee").map((c) => {
+        const jours = joursOuvresEcoules(c.confirmation_recue_le, aujourdhui);
+        return {
+          affaireId: c.affaire.id, libelle: c.affaire.libelle, depuis: c.confirmation_recue_le,
+          detail: [c.bpa_version, `${jours} j ouvré${jours > 1 ? "s" : ""}`].filter(Boolean).join(" · "),
+          enRetard: jours > referentiel.seuils.retard_bpa_jours_ouvres,
+        };
       }),
     });
   }
@@ -119,20 +128,20 @@ export async function chargerJournee(moi: ProfilCourant): Promise<Journee> {
       elements: ((plannings ?? []) as unknown as PlanningLu[]).flatMap((p) => p.vente.affaire.slice(0, 1).map((a) => ({
         affaireId: a.id, libelle: p.vente.affaire.map((x) => x.libelle).join(" + "), depuis: p.created_at,
         detail: [p.semaine_livraison_souhaitee?.replace(/^\d{4}-/, "livraison "), p.date_pose_souhaitee && `pose ${p.date_pose_souhaitee.slice(8)}/${p.date_pose_souhaitee.slice(5, 7)}`].filter(Boolean).join(" · ") || null,
-        enRetard: joursEntre(jourDe(p.created_at), aujourdhui) > 2,
+        enRetard: false,
       }))),
     });
     const dossiers = await etapesOuvertes(["DOSSIER_POSE"]);
     files.push({
       titre: "Dossiers de pose à vérifier", vide: "Aucun dossier de pose en cours.",
-      elements: dossiers.map((e) => ({ affaireId: e.affaire.id, libelle: e.affaire.libelle, depuis: e.debut_at, detail: null, enRetard: joursEntre(jourDe(e.debut_at), aujourdhui) > 5 })),
+      elements: dossiers.map((e) => ({ affaireId: e.affaire.id, libelle: e.affaire.libelle, depuis: e.debut_at, detail: null, enRetard: false })),
     });
   }
   if (roles.has("gerant_finance")) {
     const factures = await etapesOuvertes(["FACTURE_RECAP"]);
     files.push({
       titre: "Factures récapitulatives à éditer", vide: "Aucune facture à éditer.",
-      elements: factures.map((e) => ({ affaireId: e.affaire.id, libelle: e.affaire.libelle, depuis: e.debut_at, detail: null, enRetard: joursEntre(jourDe(e.debut_at), aujourdhui) > 3 })),
+      elements: factures.map((e) => ({ affaireId: e.affaire.id, libelle: e.affaire.libelle, depuis: e.debut_at, detail: null, enRetard: false })),
     });
   }
 
@@ -185,5 +194,12 @@ export async function compterTachesDuJour(moi: { id: string }): Promise<number> 
   const aujourdhui = await adaptateurs().clock.today();
   const { count } = await db.from("tache").select("id", { count: "exact", head: true })
     .eq("assignee_id", moi.id).eq("statut", "a_faire").lte("echeance", aujourdhui);
+  return count ?? 0;
+}
+
+/** Demandes de planning sans réponse confirmée, pour le compteur des gérants (EF-61). */
+export async function compterPlanningsEnAttente(): Promise<number> {
+  const db = await clientUtilisateur();
+  const { count } = await db.from("planning").select("id", { count: "exact", head: true }).neq("statut", "confirmee");
   return count ?? 0;
 }

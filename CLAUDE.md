@@ -76,6 +76,13 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Un aria-labelledby ne contient jamais d'espace (identifiants techniques, pas de titres).
 - Playwright : un seul worker, les parcours partagent la base de démo et la modifient.
 
+## Choix techniques (session 3.2)
+- Vente : public.creer_vente (tout ou rien) ; planning : public.confirmer_planning (gérants) ; actions dans src/app/(app)/ventes/actions.ts.
+- Effet faire_taches : une action qui accomplit elle-même des tâches de l'étape les marque faites avant la fermeture.
+- Mails : modèles purs src/lib/mails/modeles.ts ; envoi par notifier() (src/server/notifications.ts) → Mailer → mail_sortant en démo. Une notification qui échoue n'annule jamais l'action.
+- Jamais d'import de constante ou de fonction depuis un module « use client » dans un composant serveur (référence client, pas la valeur) : les partager dans un module neutre (ex. src/components/vente/libelles.ts).
+- Pas de composant défini dans le rendu d'un autre (l'input perd le focus) : utiliser une fonction de rendu.
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.
