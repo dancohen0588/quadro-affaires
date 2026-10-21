@@ -31,3 +31,39 @@ export function nomAttendu(gabarit: string, v: ValeursGabarit): string {
   };
   return gabarit.replace(/\{([A-Za-z]+)\}/g, (tout, cle: string) => champs[cle] ?? cle);
 }
+
+// ── Dépôt d'un document (section 7.3, J5) ────────────────────────────────────────────────────────
+
+/** Extension en minuscules (« Plan.PDF » → « pdf »), vide s'il n'y en a pas. */
+export const extension = (nom: string) => /\.([a-z0-9]{1,6})$/i.exec(nom)?.[1].toLowerCase() ?? "";
+
+/** Le format est-il accepté pour ce document (jpeg compté comme jpg) ? Sans liste, tout est accepté. */
+export function formatAccepte(formats: readonly string[] | undefined, nom: string): boolean {
+  if (!formats?.length) return true;
+  const ext = extension(nom).replace(/^jpeg$/, "jpg");
+  return formats.includes(ext);
+}
+
+/**
+ * Nom du fichier rangé : le gabarit rempli (« BDC ROUX - Cuisine.pdf ») ; sans gabarit (« libre », débit
+ * AGEM au « nom Gesteos conservé »), le nom d'origine. L'extension d'origine est toujours gardée.
+ */
+export function nomDeDepot(gabarit: string | null | undefined, v: ValeursGabarit, nomOriginal: string): string {
+  const original = nomOriginal.replace(/[\\/:*?"<>|]/g, "-").trim() || "document";
+  if (!gabarit) return original;
+  const ext = extension(original);
+  return `${nomAttendu(gabarit, v).replace(/[\\/:*?"<>|]/g, "-")}${ext ? `.${ext}` : ""}`;
+}
+
+/** Tâche du process accomplie par le dépôt du document (« Enregistrer le débit Word dans PCloud 05 »…). */
+export const TACHE_DU_DOCUMENT: Record<string, string> = {
+  entree_client: "enregistrer_entree",
+  releve: "photos_releve",
+  debit_agem: "enregistrer_debit",
+  arc_agem: "enregistrer_arc",
+  bpa: "enregistrer_confirmation",
+  retour_adv: "enregistrer_retours_adv",
+  ar_fournisseur: "enregistrer_ar",
+  photos_sav: "photos_sav",
+  photos_finales: "photos_menuisiers",
+};

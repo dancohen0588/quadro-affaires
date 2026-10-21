@@ -634,6 +634,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"kpi_marge": {
+                  Row: {
+                    "achats_cts": number | null,"ca_ht_cts": number | null,"concepteur_id": string | null,"magasin_id": string | null,"nb_ventes": number | null,"periode": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "vente_magasin_id_fkey"
+      columns: ["magasin_id"]
+isOneToOne: false
+      referencedRelation: "magasin"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"kpi_motifs": {
                   Row: {
                     "concepteur_id": string | null,"magasin_id": string | null,"motif": string | null,"nb": number | null,"periode": string | null

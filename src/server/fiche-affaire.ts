@@ -6,6 +6,8 @@ import {
 } from "@/lib/affaire/fiche";
 import { construireHistorique, type EvenementVue, type JournalLigne } from "@/lib/affaire/historique";
 import { nomClient, type ClientIdentite } from "@/lib/rules/affaire";
+import type { ValeursGabarit } from "@/lib/rules/documents";
+import { margeEstimee, type Marge } from "@/lib/rules/marge";
 import type { Role } from "@/lib/process/schema";
 import { clientUtilisateur } from "@/lib/supabase/server";
 import { cleEtape } from "@/lib/process/etat";
@@ -68,6 +70,11 @@ export type Fiche = {
     commentaire: string | null;
   } | null;
   commandes: CommandeVue[];
+  /** KPI-11 : marge estimée de la vente (prix d'achat des commandes de ses affaires). */
+  marge: Marge | null;
+  /** PCloud simulé : dossier de l'affaire et valeurs des gabarits de nom (dépôt, section 7.3). */
+  pcloudDossier: string | null;
+  valeursGabarit: ValeursGabarit;
   /** Affaires du même client vendables ensemble (EF-50), si cette affaire est en présentation ou en vente. */
   vendables: { id: string; libelle: string; montantDevisHtCts: number | null }[] | null;
   estGerant: boolean;
@@ -94,7 +101,7 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
   const { data: a, error } = await db
     .from("affaire")
     .select(
-      "id, libelle, projet, contremarque, statut, motif_perte, montant_devis_ht_cts, derniere_activite_at, vente_id, " +
+      "id, libelle, projet, contremarque, statut, motif_perte, montant_devis_ht_cts, derniere_activite_at, vente_id, pcloud_folder_id, " +
         "client:client(id, type, nom, prenom, raison_sociale, telephone, email, adresse, code_postal, ville), " +
         "magasin:magasin(code, nom), concepteur:profil!affaire_concepteur_id_fkey(id, prenom, nom, initiales, role)",
     )
@@ -104,7 +111,7 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
   if (!a) return null;
   type Lue = {
     id: string; libelle: string; projet: string; contremarque: string; statut: string; motif_perte: string | null;
-    montant_devis_ht_cts: number | null; derniere_activite_at: string; vente_id: string | null;
+    montant_devis_ht_cts: number | null; derniere_activite_at: string; vente_id: string | null; pcloud_folder_id: string | null;
     client: ClientIdentite & { id: string; telephone: string | null; email: string | null; adresse: string | null; code_postal: string | null; ville: string | null };
     magasin: { code: string; nom: string };
     concepteur: { id: string; prenom: string; nom: string; initiales: string; role: string };
@@ -139,9 +146,12 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
     if (r.error) throw new Error(`Lecture de la fiche : ${r.error.message}`);
   }
   if (!processus) return null;
-  const [{ data: commandes }, { data: memeClient }] = await Promise.all([
+  const [{ data: commandes }, { data: memeClient }, { data: achats }] = await Promise.all([
     db.from("commande_fournisseur").select("*").eq("affaire_id", affaireId).order("created_at"),
     db.from("affaire").select("id, libelle, montant_devis_ht_cts, statut, vente_id").eq("client_id", x.client.id).eq("statut", "active"),
+    venteId
+      ? db.from("commande_fournisseur").select("prix_achat_cts, affaire!inner(vente_id)").eq("affaire.vente_id", venteId)
+      : Promise.resolve({ data: [] as { prix_achat_cts: number | null }[] }),
   ]);
 
   const aujourdhui = await adaptateurs().clock.today();
@@ -183,6 +193,11 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
   const confirme = planning.data?.statut === "confirmee";
   const semaine = (confirme ? planning.data?.semaine_livraison_confirmee : null) ?? planning.data?.semaine_livraison_souhaitee ?? null;
   const ouvertesIci = processus.moteur.ouvertes(processus.etat).map((e) => e.code);
+  const valeursGabarit: ValeursGabarit = {
+    contremarque: x.contremarque, projet: x.projet, client: nom,
+    semaine: (commandes ?? []).filter((c) => c.fournisseur === "AGEM" && c.semaine_annoncee).at(-1)?.semaine_annoncee ?? semaine,
+    fournisseur: (commandes ?? []).filter((c) => c.fournisseur !== "AGEM").at(-1)?.fournisseur ?? null,
+  };
   const personne = (id: unknown) => {
     const p = typeof id === "string" ? parProfil.get(id) : undefined;
     return p ? { prenom: p.prenom, initiales: p.initiales } : null;
@@ -254,9 +269,10 @@ export async function chargerFiche(affaireId: string, moi: ProfilCourant): Promi
     process: { nom: definition.nom, ...construireProcessVue(definition, lignesEtapes, taches.data ?? [], { aujourdhui, prenomDe }) },
     aValider,
     motifs: (parametre.get("motifs_non_vente") ?? []) as string[],
-    documents: construireDocumentsVue(definition, lignesEtapes, documents.data ?? [], {
-      contremarque: x.contremarque, projet: x.projet, client: nom, semaine,
-    }),
+    documents: construireDocumentsVue(definition, lignesEtapes, documents.data ?? [], valeursGabarit),
+    valeursGabarit,
+    pcloudDossier: x.pcloud_folder_id,
+    marge: vente.data ? margeEstimee(vente.data.montant_ht_cts, (achats ?? []).map((c) => c.prix_achat_cts)) : null,
     intervenants: construireIntervenants(definition, lignesEtapes, {
       concepteur: { prenom: x.concepteur.prenom, initiales: x.concepteur.initiales, role: x.concepteur.role, magasin: x.magasin.nom },
       referents: Object.fromEntries(ROLES_REFERENTS.map((r) => [r, personne(parametre.get(r))])),

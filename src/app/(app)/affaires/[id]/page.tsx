@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { BlocRdv } from "@/components/affaire/bloc-rdv";
 import { DocumentsAttendus, Historique, Intervenants } from "@/components/affaire/blocs-lateraux";
+import { DeposerDocument } from "@/components/affaire/deposer-document";
 import { Etat, PastillePhase } from "@/components/affaire/pastille-phase";
 import { Reassigner } from "@/components/affaire/reassigner";
 import { CloreAffaire } from "@/components/affaire/clore-affaire";
@@ -106,14 +107,13 @@ export default async function FicheAffaire({ params }: PageProps<"/affaires/[id]
           ) : null}
           {f.statut === "active" && f.peutModifier && <CloreAffaire affaireId={f.id} motifs={f.motifs} />}
           {f.concepteursPossibles && <Reassigner affaireId={f.id} actuel={f.concepteur.id} possibles={f.concepteursPossibles} />}
-          <span
-            role="link"
-            aria-disabled="true"
-            title="L'explorateur PCloud simulé arrive au bloc J5."
-            className="inline-flex h-10 cursor-not-allowed items-center rounded-lg border px-4 text-[15px] font-semibold text-muted-foreground"
+          <Link
+            href={`/pcloud?client=${f.client.id}#affaire-${f.id}`}
+            title={f.pcloudDossier ?? "Le dossier sera créé au premier dépôt."}
+            className="inline-flex h-10 items-center rounded-lg border bg-card px-4 text-[15px] font-semibold text-teal-900 hover:bg-fond"
           >
             Ouvrir le dossier PCloud
-          </span>
+          </Link>
           {f.aValider.length > 0 && <ValiderEtape affaireId={f.id} etapes={f.aValider} motifs={f.motifs} aujourdhui={f.aujourdhui} />}
         </div>
       </header>
@@ -131,7 +131,10 @@ export default async function FicheAffaire({ params }: PageProps<"/affaires/[id]
           )}
         </div>
         <div className="flex min-w-0 flex-col gap-5">
-          <DocumentsAttendus documents={f.documents} annee={annee} />
+          <DocumentsAttendus
+            documents={f.documents} annee={annee} lienPcloud={`/pcloud?client=${f.client.id}#affaire-${f.id}`}
+            deposer={f.peutModifier ? <DeposerDocument affaireId={f.id} documents={f.documents} valeurs={f.valeursGabarit} aujourdhui={f.aujourdhui} /> : undefined}
+          />
           <BlocRdv affaireId={f.id} rdv={f.rdv} aujourdhui={f.aujourdhui} modifiable={f.peutModifier} />
           <Intervenants
             intervenants={f.intervenants}

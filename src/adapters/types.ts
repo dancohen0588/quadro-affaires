@@ -37,18 +37,22 @@ export interface Mailer {
 // ── FileStore ────────────────────────────────────────────────────────────────────────────────────
 
 export interface DossierClient {
+  /** Identifiant du dossier (chemin logique en démo, identifiant PCloud en B3). */
   id: string;
   url: string | null;
 }
 
 export interface FichierDepose {
+  /** Identifiant du fichier (clé de stockage en démo, identifiant PCloud en B3). */
   id: string;
+  /** Nom réellement donné (suffixé « (2) » si le nom existait déjà : rien n'est jamais écrasé). */
+  nomFinal: string;
   cheminRelatif: string;
 }
 
 export interface FileStore {
-  /** Copie le modèle « NOUVEAU CLIENT » pour une affaire (section 13.4). */
-  creerDossierClient(input: { magasinCode: string; nomDossier: string }): Promise<DossierClient>;
+  /** Copie le modèle « NOUVEAU CLIENT » (liste des sous-dossiers) pour une affaire (section 13.4). */
+  creerDossierClient(input: { chemin: string; sousDossiers: readonly string[] }): Promise<DossierClient>;
   /** Range un fichier, déjà renommé selon le gabarit, dans un sous-dossier du dossier client. */
   deposer(input: {
     dossierId: string;
@@ -58,6 +62,8 @@ export interface FileStore {
   }): Promise<FichierDepose>;
   /** Liste le contenu d'un sous-dossier (contrôle des documents attendus). */
   lister(input: { dossierId: string; sousDossier: string }): Promise<string[]>;
+  /** Lien de consultation d'un fichier déposé (lien signé de courte durée en démo). */
+  lien(input: { fichierId: string }): Promise<string | null>;
 }
 
 // ── CalendarSource ───────────────────────────────────────────────────────────────────────────────

@@ -84,6 +84,17 @@ async function main() {
     await vider(table);
   }
 
+  // PCloud simulé : bucket créé s'il manque, fichiers des démonstrations précédentes effacés.
+  const BUCKET = "pcloud-demo";
+  if (!(await db.storage.getBucket(BUCKET)).data) ok(await db.storage.createBucket(BUCKET, { public: false, fileSizeLimit: "4MB" }), "Bucket PCloud simulé");
+  const fichiersPcloud = async (prefixe: string): Promise<string[]> => {
+    const { data } = await db.storage.from(BUCKET).list(prefixe, { limit: 1000 });
+    const sous = await Promise.all((data ?? []).map((o) => (o.id === null ? fichiersPcloud(prefixe ? `${prefixe}/${o.name}` : o.name) : [prefixe ? `${prefixe}/${o.name}` : o.name])));
+    return sous.flat();
+  };
+  const anciens = await fichiersPcloud("");
+  for (let i = 0; i < anciens.length; i += 500) ok(await db.storage.from(BUCKET).remove(anciens.slice(i, i + 500)), "Nettoyage du PCloud simulé");
+
   // 2a. Comptes de démo existants (les profils et rattachements suivent en cascade).
   let supprimes = 0;
   for (let page = 1; ; page++) {

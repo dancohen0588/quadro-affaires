@@ -95,7 +95,7 @@ export async function chargerPilotage(periode: Periode, magasinCode: string) {
   ]);
   const magasin = magasins.find((m) => m.code === magasinCode) ?? null;
   const filtre = { magasinId: magasin?.id ?? null };
-  const [periodes, ventes, flux, potentiel, transfo, rdv, reglements, delai, motifs, enCours, affaires, echeances] = await Promise.all([
+  const [periodes, ventes, flux, potentiel, transfo, rdv, reglements, delai, motifs, enCours, affaires, echeances, marge] = await Promise.all([
     db.from("kpi_periodes").select("code, libelle, debut, fin").order("ordre"),
     db.from("kpi_ventes").select("magasin_id, concepteur_id, nb_ventes, ca_ht_cts").eq("periode", periode),
     db.from("kpi_flux_entrant").select("magasin_id, concepteur_id, nb_clients, nb_cnq").eq("periode", periode),
@@ -111,6 +111,7 @@ export async function chargerPilotage(periode: Periode, magasinCode: string) {
       .select("id, type, montant_prevu_cts, date_attendue, vente:vente!inner(magasin_id, affaire(id, libelle))")
       .is("recu_le", null).gt("montant_prevu_cts", 0).not("date_attendue", "is", null).lte("date_attendue", ajouterJours(aujourdhui, 7))
       .order("date_attendue").limit(200),
+    db.from("kpi_marge").select("magasin_id, concepteur_id, nb_ventes, ca_ht_cts, achats_cts").eq("periode", periode),
   ]);
 
   const phaseDe = new Map(phases.flatMap((p) => p.etapes.map((e) => [e.code, p] as const)));
@@ -148,6 +149,7 @@ export async function chargerPilotage(periode: Periode, magasinCode: string) {
     reglements: filtrer(lire(reglements, "KPI-08"), filtre),
     delai: filtrer(lire(delai, "KPI-09"), filtre),
     motifs: filtrer(lire(motifs, "KPI-10"), filtre),
+    marge: filtrer(lire(marge, "KPI-11"), filtre),
     enCours: lire(enCours, "Affaires en cours"),
     alertes: alertesVues,
     aVerifier,

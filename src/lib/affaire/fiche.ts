@@ -199,6 +199,10 @@ export type DocumentVue = {
   dossier: string;
   statut: "ok" | "attendu" | "a_venir";
   deposeLe: string | null;
+  /** Étape qui attend le document, gabarit de nom (null : nom libre ou nom Gesteos conservé) et formats acceptés. */
+  etape: string;
+  gabarit: string | null;
+  formats: string[];
 };
 
 export function construireDocumentsVue(
@@ -227,6 +231,9 @@ export function construireDocumentsVue(
         dossier: doc.dossier,
         statut: depose ? "ok" : atteinte ? "attendu" : "a_venir",
         deposeLe: depose ? jourDe(depose.created_at) : null,
+        etape: etape.code,
+        gabarit: doc.gabarit_nom ?? null,
+        formats: doc.formats ?? [],
       });
       if (prochaine) suivants++;
     }

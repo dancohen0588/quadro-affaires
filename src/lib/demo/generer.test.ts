@@ -49,9 +49,17 @@ describe("jeu de démo (session 1.4)", () => {
     const attendus: Record<string, number> = {
       r3n_en_cours: 3, arc_en_retard: 2, bpa_en_retard: 1, acompte_1_non_recu: 2, acompte_2_en_retard: 1,
       acompte_2_apres_3_jours: 1, retard_commerce: 2, sav_ouvert: 1, client_professionnel: 1, client_qui_revient: 1,
-      jean_concepteur: 1, branche_autres_fournisseurs: 1, vente_multi_affaires: 2, manon_r2_aujourdhui: 3,
+      jean_concepteur: 1, branche_autres_fournisseurs: 1, vente_multi_affaires: 2, manon_r2_aujourdhui: 3, debit_agem_exemple: 1,
     };
     for (const cas of CAS_DEMO) expect(jeu.cas[cas].length, cas).toBe(attendus[cas]);
+  });
+
+  it("prépare l'affaire du débit AGEM d'exemple (scénario n° 5)", () => {
+    const [id] = jeu.cas.debit_agem_exemple;
+    const a = jeu.affaires.find((x) => x.id === id)!;
+    expect(a).toMatchObject({ contremarque: "SAS VISIOLAB Julien ROUSSEL", concepteur_id: profils.jean, projet: "bureau", montant_devis_ht_cts: 745_000 });
+    expect(a.pcloud_folder_id).toBe("VAL/SAS VISIOLAB - Bureau (Jean)");
+    expect(ouvertes(id).map((e) => e.etape_code)).toContain("COMMANDE_AGEM");
   });
 
   it("met les cas imposés dans l'état attendu", () => {

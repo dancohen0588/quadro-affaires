@@ -933,6 +933,14 @@ Le débit d'exemple contenait de vraies données client : le dépôt de code n'e
 - Contrôle : un document attendu est marqué présent s'il existe dans le bon sous-dossier.
 - Les menuisiers continuent de lire PCloud ; l'outil ne déplace ni ne supprime aucun fichier existant.
 
+Précisions (session 5.1) :
+- le modèle « NOUVEAU CLIENT » est une liste provisoire dans `parametre.pcloud_modele` (intitulés 02, 04 et 09 à confirmer par Benjamin) ;
+- un dossier par affaire, `{MAGASIN}/{CLIENT} - {Projet} ({prénom du concepteur})`, créé à la création des affaires (ou au premier dépôt) ; convention à confirmer ;
+- le dépôt contrôle le format attendu, renomme selon le gabarit en gardant l'extension (sans gabarit : nom d'origine), range dans le sous-dossier, crée la ligne `document` et coche la tâche « Enregistrer … dans PCloud » correspondante ; un nom déjà pris devient « nom (2) », rien n'est écrasé ;
+- démo : stockage Supabase privé `pcloud-demo`, 4 Mo par fichier ; écran « PCloud (simulé) » par client (`/pcloud`) ;
+- débit AGEM : la lecture compare contremarque et concepteur à l'affaire et signale les champs introuvables ; la validation écrit la commande AGEM ouverte (créée si besoin) et coche « Saisir n° de commande… » ; la marge estimée (KPI-11) s'affiche sur la fiche et dans le Pilotage (carte CA signé) ;
+- le jeu de démo contient l'affaire du débit d'exemple (SAS VISIOLAB · Bureau, Jean, La Valentine, à la commande AGEM) : la séquence 5 du scénario se joue donc avec Jean.
+
 ### 13.5 Outlook (B5)
 
 Lecture seule des agendas des conceptrices via Microsoft Graph (permission `Calendars.Read`, consentement administrateur). Un RDV dont le titre commence par `R1`, `R2`, `R3`, `R3.2`… est rattaché à l'affaire par le nom du client ; les règles RG-30 et RG-31 se calculent alors sans saisie. Convention de titre à valider : `R2 - NOM Prénom - Projet`.
@@ -1117,7 +1125,7 @@ Chaque séquence répond à une réponse de Jean du 12 octobre. Dérouler avec l
 | 2 | Manon | Un client entre en magasin : contact rapide au R0 sans coordonnées (CNQ), puis R1 avec deux affaires cuisine + dressing | « Un client = une ou plusieurs affaires » ; création au R0 ou R1 |
 | 3 | Manon | Fiche affaire : R3 sans vente → R3.2 ; puis vente des deux affaires en une seule vente, échéancier 40 / 50 / 10 | R3.2, R3.3… ; échéancier standard |
 | 4 | Manon | Tentative de commande AGEM refusée, saisie de l'acompte 1, commande débloquée | « Pas de commande AGEM sans acompte 1 » |
-| 5 | Manon | Dépôt du débit AGEM : champs lus automatiquement, fichier renommé et rangé dans le PCloud simulé, marge estimée | « Tout pourrait passer par l'outil » ; marge |
+| 5 | Jean (affaire SAS VISIOLAB, celle du débit d'exemple) | Dépôt du débit AGEM : champs lus automatiquement, fichier renommé et rangé dans le PCloud simulé, marge estimée | « Tout pourrait passer par l'outil » ; marge |
 | 6 | Valentin | Demande de planning reçue, confirmation de la livraison et de la pose ; Manon le voit sans WhatsApp | Groupe WhatsApp du planning |
 | 7 | Benjamin | File des BPA à donner, alerte BPA en retard | « Le bon pour accord est donné trop tard à AGEM » |
 | 8 | Jean | Horloge +3 jours : acompte 2 non reçu remonte, digest dans la boîte d'envoi | « On passe à côté d'un règlement » |

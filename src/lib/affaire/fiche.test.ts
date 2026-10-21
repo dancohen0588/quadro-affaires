@@ -76,6 +76,8 @@ describe("documents attendus (EF-35)", () => {
     ]);
     expect(docs[2]).toMatchObject({ nom: "BDC ROUX MARIE - Cuisine.pdf", deposeLe: "2026-09-12" });
     expect(docs[4].nom).toBe("AR AGEM - ROUX MARIE - Cuisine - S41");
+    expect(docs[3]).toMatchObject({ etape: "COMMANDE_AGEM", gabarit: null, formats: ["docx"] });
+    expect(docs[2].gabarit).toBe("BDC {CONTREMARQUE} - {Projet}");
   });
 });
 
