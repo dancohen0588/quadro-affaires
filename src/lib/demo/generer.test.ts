@@ -101,6 +101,30 @@ describe("jeu de démo (session 1.4)", () => {
     expect([cuisine.projet, dressing.projet]).toEqual(["cuisine", "dressing"]);
   });
 
+  it("mène chaque affaire active à son étape par le moteur de process (session 2.1)", () => {
+    for (const x of actives) {
+      const siennes = jeu.etapes.filter((e) => e.affaire_id === x.id);
+      expect(siennes[0].etape_code, x.libelle!).toBe("R0");
+      expect(ouvertes(x.id!).length, x.libelle!).toBeGreaterThan(0);
+      for (const e of siennes.filter((y) => y.statut === "faite")) {
+        expect(e.issue_code && e.valide_par && e.fin_at! >= e.debut_at!, `${x.libelle} ${e.etape_code}`).toBeTruthy();
+      }
+      // Les tâches gardées sont celles des étapes ouvertes.
+      const ids = new Set(ouvertes(x.id!).map((e) => e.id));
+      for (const t of jeu.taches.filter((y) => y.affaire_id === x.id)) expect(ids.has(t.etape_instance_id!)).toBe(true);
+    }
+    // RG-01 : aucune commande AGEM validée avant la réception de l'acompte 1.
+    for (const e of jeu.etapes.filter((y) => y.etape_code === "COMMANDE_AGEM" && y.statut === "faite")) {
+      const recu = jeu.echeances.find((y) => y.vente_id === affaire(e.affaire_id).vente_id && y.type === "acompte_1")!.recu_le;
+      expect(recu! <= e.fin_at!.slice(0, 10)).toBe(true);
+    }
+    // Le R4 s'ouvre en parallèle du solde ; l'étape courante affichée reste le solde.
+    const solde = actives.find((x) => x.etape_courante_code === "SOLDE")!;
+    expect(ouvertes(solde.id!).map((e) => e.etape_code).sort()).toEqual(["R4", "SOLDE"]);
+    // Les tâches du R4 vont à la responsable R4.
+    expect(jeu.taches.some((t) => t.affaire_id === solde.id && t.assignee_id === profils.elsie)).toBe(true);
+  });
+
   it("prépare la journée de Manon (scénario n° 1)", () => {
     const manon = profils.manon;
     const sesTaches = jeu.taches.filter((t) => t.assignee_id === manon && t.statut === "a_faire");

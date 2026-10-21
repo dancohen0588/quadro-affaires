@@ -2,6 +2,7 @@ import "server-only";
 import { readAppMode, type AppMode } from "@/lib/env";
 import { SystemClock } from "./clock";
 import { DemoCalendarSource, DemoClock, DemoMailer, boiteEnvoiMemoire, demoAuth, demoFileStore } from "./demo";
+import { lireDecalageDemo } from "./horloge-demo";
 import { NonDisponibleError, type Adaptateurs } from "./types";
 
 export type { Adaptateurs } from "./types";
@@ -13,14 +14,14 @@ export type { Adaptateurs } from "./types";
  */
 export function creerAdaptateurs(mode: AppMode): Adaptateurs {
   if (mode === "demo") {
-    // Branchements provisoires : remplacés par les lectures en base en session 1.3 (horloge), J3 (RDV) et J4 (boîte d'envoi).
+    // Horloge lue en base (parametre.horloge_demo) ; RDV et boîte d'envoi branchés en J3 et J4.
     const boite = boiteEnvoiMemoire();
     return {
       auth: demoAuth,
       mailer: new DemoMailer(boite.enregistrer),
       fileStore: demoFileStore,
       calendar: new DemoCalendarSource(async () => []),
-      clock: new DemoClock(async () => 0),
+      clock: new DemoClock(lireDecalageDemo),
     };
   }
 

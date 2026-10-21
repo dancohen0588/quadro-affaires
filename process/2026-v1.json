@@ -406,7 +406,8 @@
               "echeance": {
                 "depuis": "ouverture_etape",
                 "jours": 0
-              }
+              },
+              "avis_google": true
             },
             {
               "code": "facture_acompte",
@@ -1210,7 +1211,8 @@
                 "depuis": "rdv",
                 "rdv": "R4",
                 "jours": 0
-              }
+              },
+              "avis_google": true
             }
           ],
           "documents": [],
@@ -1237,7 +1239,8 @@
               "echeance": {
                 "depuis": "ouverture_etape",
                 "jours": 7
-              }
+              },
+              "avis_google": true
             }
           ],
           "documents": [],

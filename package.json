@@ -12,11 +12,11 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "db:push": "supabase db push",
-    "db:types": "supabase gen types typescript --linked --schema public > src/lib/db/types.ts",
+    "db:types": "supabase gen types typescript --linked --schema public > src/lib/db/types.ts.tmp && mv src/lib/db/types.ts.tmp src/lib/db/types.ts",
     "db:test": "supabase test db",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "test:couverture": "vitest run --coverage",
-    "db:types:local": "supabase gen types typescript --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres --schema public > src/lib/db/types.ts"
+    "db:types:local": "supabase gen types typescript --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres --schema public > src/lib/db/types.ts.tmp && mv src/lib/db/types.ts.tmp src/lib/db/types.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

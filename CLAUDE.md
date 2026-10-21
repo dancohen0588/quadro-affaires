@@ -49,9 +49,16 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 ## Choix techniques (session 1.4)
 - Règles réutilisables : src/lib/rules/calendrier.ts (jours ouvrés, fériés, semaines ISO), src/lib/rules/echeancier.ts (RG-10 à RG-13), src/lib/process/echeances.ts (dates des tâches modèles).
 - Jeu de démo : src/lib/demo/generer.ts, pur et déterministe (GRAINE_DEMO), daté par rapport au jour du seed ; cas du scénario dans CAS_DEMO.
-- src/lib/demo/positionner.ts écrit les états directement : à remplacer en J2 par le rejeu du moteur de process.
 - Insertions par lots avec supabase-js : toujours `{ defaultToNull: false }`, sinon une colonne absente d'une ligne devient NULL au lieu de sa valeur par défaut.
 - Reprise d'historique : fournir created_at ; la dernière activité et le journal en tiennent compte (migration dates_activite_journal).
+
+## Choix techniques (session 2.1)
+- Moteur de process pur : src/lib/process/moteur.ts (creerMoteur → demarrer, valider, repasserCommandeSav, blocage, ouvertes, etapeCourante). Il renvoie des effets, jamais d'écriture directe.
+- Écriture des effets : public.appliquer_effets (invoker) → prive.appliquer_effets (definer), tout ou rien, droits et concurrence vérifiés ; RG-01 aussi gardée par trigger sur etape_instance.
+- Server actions dans src/app/(app)/affaires/actions.ts ; lecture de l'état et appel RPC dans src/server/process.ts ; passage lignes → état dans src/lib/process/etat.ts.
+- Horloge de démo branchée sur parametre.horloge_demo (src/adapters/horloge-demo.ts).
+- Jeu de démo : chaque affaire active est menée à son étape par rejeu du moteur (src/lib/demo/rejouer.ts) ; seules les tâches des étapes ouvertes sont gardées.
+- Règles de l'affaire (RG-02, RG-03, RG-08) : src/lib/rules/affaire.ts. Une affaire insérée fournit derniere_activite_at (colonne sans défaut, RG-09).
 
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
