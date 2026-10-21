@@ -46,6 +46,13 @@ Lire aussi AGENTS.md : Next.js 16 diffère des versions connues (ex. `proxy.ts` 
 - Process : définition dans process/2026-v1.json, chargée par chargerProcess() (Zod + cohérence) ; ne jamais lire le JSON sans le valider.
 - Tests pgTAP indépendants des données présentes (identifiants propres à chaque test).
 
+## Choix techniques (session 1.4)
+- Règles réutilisables : src/lib/rules/calendrier.ts (jours ouvrés, fériés, semaines ISO), src/lib/rules/echeancier.ts (RG-10 à RG-13), src/lib/process/echeances.ts (dates des tâches modèles).
+- Jeu de démo : src/lib/demo/generer.ts, pur et déterministe (GRAINE_DEMO), daté par rapport au jour du seed ; cas du scénario dans CAS_DEMO.
+- src/lib/demo/positionner.ts écrit les états directement : à remplacer en J2 par le rejeu du moteur de process.
+- Insertions par lots avec supabase-js : toujours `{ defaultToNull: false }`, sinon une colonne absente d'une ligne devient NULL au lieu de sa valeur par défaut.
+- Reprise d'historique : fournir created_at ; la dernière activité et le journal en tiennent compte (migration dates_activite_journal).
+
 ## Charte
 Teal 900 #0E3B45, Teal 700 #1B5A66, Teal 500 #2F7A86, Sage 500 #9DBFAE, Sage 100 #E8F0EC, fond #F4F7F6, encre #15262B.
 Phases : 01 #3B6E8F, 02 #6B5B95, 03 #B9812E, 04 #3A8073, 05 #B4483F, 06 #5B6472.
